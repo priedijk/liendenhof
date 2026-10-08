@@ -1,0 +1,810 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}[hidden]{display:none!important}img{max-width:100%}</style>
+<title>Liendenhof Walkthrough</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: full-bleed first-person view; the chrome floats at the corners like annotations on an architect's sheet,
+   with the floor plan (north up, as on the estate-agent drawing) doubling as the map. */
+:root {
+  --bg: #e7e3dc;
+  --panel: rgba(250, 248, 244, 0.88);
+  --panel-solid: #faf8f4;
+  --ink: #23211d;
+  --muted: #6b655c;
+  --line: rgba(35, 33, 29, 0.14);
+  --accent: #3f5a4a;
+  --accent-ink: #f6f3ee;
+  --oak: #c49a6c;
+  --room-day: #efe3d2;
+  --room-wet: #d5e3df;
+  --room-night: #ece1d5;
+  --room-hall: #f3eee6;
+  --wall: #23211d;
+  --me: #c2512f;
+  --f-ui: "Archivo", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Menlo, monospace;
+  --r: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141517; --panel: rgba(25, 26, 29, 0.84); --panel-solid: #1b1c1f; --ink: #ece8e1; --muted: #a39d93;
+    --line: rgba(236, 232, 225, 0.16); --accent: #a9c7b1; --accent-ink: #14201a; --oak: #d3ab7e;
+    --room-day: #3a332a; --room-wet: #26353a; --room-night: #352e2a; --room-hall: #2a2927; --wall: #ece8e1; --me: #ef8a62;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #141517; --panel: rgba(25, 26, 29, 0.84); --panel-solid: #1b1c1f; --ink: #ece8e1; --muted: #a39d93;
+  --line: rgba(236, 232, 225, 0.16); --accent: #a9c7b1; --accent-ink: #14201a; --oak: #d3ab7e;
+  --room-day: #3a332a; --room-wet: #26353a; --room-night: #352e2a; --room-hall: #2a2927; --wall: #ece8e1; --me: #ef8a62;
+  color-scheme: dark;
+}
+
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f-ui); overflow: hidden; }
+.stage { position: relative; height: 100%; overflow: hidden; }
+#view { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; outline: none; cursor: grab; }
+#view.locked { cursor: none; }
+
+.panel {
+  background: var(--panel); border: 1px solid var(--line); border-radius: var(--r);
+  backdrop-filter: blur(10px) saturate(1.1); -webkit-backdrop-filter: blur(10px) saturate(1.1);
+}
+.label { font-family: var(--f-mono); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+
+/* title block, like the cartouche on a drawing */
+.sheet { position: absolute; top: 16px; left: 16px; padding: 12px 16px 13px; display: grid; gap: 6px; max-width: min(340px, calc(100% - 32px)); }
+.sheet h1 { margin: 0; font-size: 22px; line-height: 1; font-weight: 750; font-stretch: 78%; letter-spacing: -0.01em; text-wrap: balance; }
+.sheet .where { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.sheet .room { font-size: 15px; font-weight: 600; font-stretch: 92%; }
+.sheet .dims { font-family: var(--f-mono); font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* rooms */
+.rooms { position: absolute; top: 16px; right: 16px; padding: 8px; display: grid; gap: 2px; min-width: 150px; }
+.rooms .label { padding: 4px 8px 6px; }
+.rooms button {
+  appearance: none; border: 0; background: transparent; color: var(--ink); font: 500 14px/1.2 var(--f-ui);
+  text-align: left; padding: 7px 8px; border-radius: 6px; cursor: pointer; display: flex; justify-content: space-between; gap: 12px;
+}
+.rooms button kbd { font-family: var(--f-mono); font-size: 11px; color: var(--muted); }
+.rooms button:hover { background: var(--line); }
+.rooms button[aria-current="true"] { background: var(--accent); color: var(--accent-ink); }
+.rooms button[aria-current="true"] kbd { color: inherit; opacity: 0.75; }
+
+/* floor plan */
+.plan { position: absolute; left: 16px; bottom: 16px; margin: 0; padding: 10px; display: grid; gap: 6px; }
+.plan canvas { display: block; width: 228px; height: 228px; cursor: crosshair; }
+.plan figcaption { display: flex; justify-content: space-between; gap: 8px; }
+
+/* right-hand dock: wall paint above the tile picker */
+.dock { position: absolute; right: 16px; bottom: 16px; display: grid; gap: 10px; width: 236px; }
+.tiles, .paint { padding: 10px 12px 12px; display: grid; gap: 8px; }
+.paint-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.toggle { appearance: none; border: 1px solid var(--line); background: transparent; color: var(--ink); border-radius: 999px;
+  font: 500 12.5px/1 var(--f-ui); padding: 6px 10px; cursor: pointer; }
+.toggle[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.paints { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.paints button { appearance: none; aspect-ratio: 1; border-radius: 50%; border: 2px solid transparent; padding: 0; cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,.18); }
+.paints button[aria-pressed="true"] { border-color: var(--ink); }
+.paint-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12.5px; color: var(--muted); }
+.paint-row label { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.paint-row input[type="color"] { width: 30px; height: 24px; padding: 0; border: 1px solid var(--line); border-radius: 5px; background: none; cursor: pointer; }
+.linkish { appearance: none; border: 0; background: none; color: var(--muted); font: 500 12.5px var(--f-ui); cursor: pointer; text-decoration: underline; padding: 2px; }
+.paint-name { font-size: 12.5px; color: var(--ink); min-height: 1.2em; }
+#view.painting { cursor: crosshair; }
+.crosshair { position: absolute; left: 50%; top: 50%; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%;
+  border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.5); pointer-events: none; }
+
+/* door prompt */
+.door-btn { position: absolute; left: 50%; bottom: 64px; transform: translateX(-50%); padding: 9px 14px; display: flex; gap: 10px; align-items: center;
+  font: 500 14px/1.2 var(--f-ui); color: var(--ink); cursor: pointer; }
+.door-btn kbd { font-family: var(--f-mono); font-size: 11.5px; padding: 1px 6px; border: 1px solid var(--line); border-radius: 4px; }
+.swatches { display: grid; gap: 4px; }
+.swatches button {
+  appearance: none; border: 1px solid transparent; background: transparent; color: var(--ink); cursor: pointer;
+  display: grid; grid-template-columns: 34px 1fr; align-items: center; gap: 10px; padding: 5px; border-radius: 7px; text-align: left;
+  font: 500 13.5px/1.2 var(--f-ui);
+}
+.swatches button:hover { background: var(--line); }
+.swatches button[aria-pressed="true"] { border-color: var(--ink); }
+.chip { height: 22px; border-radius: 3px; background-image:
+  linear-gradient(90deg, transparent 0 24%, rgba(255,255,255,.55) 24% 26%, transparent 26% 49%, rgba(255,255,255,.55) 49% 51%, transparent 51% 74%, rgba(255,255,255,.55) 74% 76%, transparent 76%);
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,.12); }
+.swatches small { display: block; font-family: var(--f-mono); font-size: 10.5px; color: var(--muted); margin-top: 2px; }
+
+/* hint, loader, joystick */
+.hint { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); padding: 9px 14px; font-size: 13px; color: var(--ink);
+  display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; max-width: calc(100% - 560px); transition: opacity .6s; }
+.hint b { font-family: var(--f-mono); font-weight: 500; font-size: 11.5px; padding: 1px 5px; border: 1px solid var(--line); border-radius: 4px; }
+.hint.gone { opacity: 0; pointer-events: none; }
+.loader { position: absolute; inset: 0; display: grid; place-items: center; background: var(--bg); z-index: 5; }
+.loader .box { width: min(320px, calc(100% - 32px)); display: grid; gap: 10px; }
+.loader .bar { height: 3px; background: var(--line); border-radius: 2px; overflow: hidden; }
+.loader .bar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .2s; }
+.loader p { margin: 0; font-size: 14px; color: var(--muted); }
+.loader h2 { margin: 0; font-size: 26px; font-weight: 750; font-stretch: 78%; }
+.joy { position: absolute; width: 112px; height: 112px; margin: -56px 0 0 -56px; border-radius: 50%; border: 1.5px solid var(--panel-solid);
+  background: rgba(0,0,0,.12); pointer-events: none; }
+.joy i { position: absolute; left: 50%; top: 50%; width: 44px; height: 44px; margin: -22px 0 0 -22px; border-radius: 50%; background: var(--panel-solid); opacity: .9; }
+
+:focus-visible { outline: 2px solid var(--me); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .hint, .loader .bar i { transition: none; } }
+
+@media (max-width: 900px) { .hint { display: none; } }
+@media (max-width: 640px) {
+  .sheet { top: 12px; left: 16px; right: 16px; max-width: none; padding: 10px 12px; }
+  .sheet h1 { font-size: 18px; }
+  .rooms { top: auto; left: 16px; right: 16px; bottom: 16px; display: flex; overflow-x: auto; min-width: 0; padding: 6px; gap: 4px; scrollbar-width: none; }
+  .rooms .label, .rooms kbd { display: none; }
+  .rooms button { flex: 0 0 auto; padding: 8px 10px; }
+  .plan { left: auto; right: 16px; bottom: 72px; padding: 6px; }
+  .plan canvas { width: 118px; height: 118px; }
+  .plan figcaption { display: none; }
+  .dock { right: auto; left: 16px; bottom: 72px; width: min(200px, calc(100% - 170px)); gap: 8px; }
+  .tiles, .paint { padding: 8px; }
+  .tiles .label { display: none; }
+  .door-btn { bottom: 210px; }
+  .swatches { grid-auto-flow: column; }
+  .swatches button { grid-template-columns: 30px; padding: 4px; }
+  .swatches button span { display: none; }
+}
+</style>
+
+<div class="stage">
+  <canvas id="view" tabindex="0" aria-label="3D view of the renovated apartment"></canvas>
+
+  <header class="sheet panel">
+    <span class="label">Liendenhof · 2nd floor · renovation concept</span>
+    <h1>Walk through the apartment</h1>
+    <div class="where"><span class="room" id="room-name">Hall</span><span class="dims" id="room-dims"></span></div>
+  </header>
+
+  <nav class="rooms panel" id="rooms" aria-label="Jump to room">
+    <span class="label">Go to</span>
+  </nav>
+
+  <figure class="plan panel">
+    <canvas id="plan" aria-label="Floor plan. Click to move there."></canvas>
+    <figcaption><span class="label">Floor plan · N ↑</span><span class="label" id="plan-scale">1 m</span></figcaption>
+  </figure>
+
+  <div class="dock">
+    <section class="paint panel" aria-labelledby="paint-title">
+      <div class="paint-head">
+        <span class="label" id="paint-title">Wall paint</span>
+        <button type="button" class="toggle" id="paint-toggle" aria-pressed="false">Paint walls</button>
+      </div>
+      <div class="paints" id="paints" role="group" aria-label="Paint colour"></div>
+      <span class="paint-name" id="paint-name"></span>
+      <div class="paint-row">
+        <label for="paint-custom">Any colour <input type="color" id="paint-custom" value="#a8b09a"></label>
+        <button type="button" class="linkish" id="paint-reset">Reset walls</button>
+      </div>
+    </section>
+    <section class="tiles panel" aria-labelledby="tiles-title">
+      <span class="label" id="tiles-title">Shower &amp; toilet tiles</span>
+      <div class="swatches" id="swatches"></div>
+    </section>
+  </div>
+
+  <button type="button" class="door-btn panel" id="door-btn" hidden><span id="door-text">Open the door</span><kbd>E</kbd></button>
+  <div class="crosshair" id="crosshair" hidden></div>
+
+  <div class="hint panel" id="hint">
+    <span><b>Click</b> to look around</span><span><b>W A S D</b> walk</span><span><b>Shift</b> faster</span><span><b>E</b> doors</span><span><b>P</b> paint</span><span><b>1–7</b> rooms</span><span><b>Esc</b> release mouse</span>
+  </div>
+
+  <div class="joy" id="joy" hidden><i></i></div>
+
+  <div class="loader" id="loader">
+    <div class="box">
+      <span class="label">Liendenhof · renovation concept</span>
+      <h2>Building the apartment</h2>
+      <div class="bar"><i id="bar"></i></div>
+      <p id="load-msg">Loading the 3D model…</p>
+    </div>
+  </div>
+</div>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+const ROOMS = [   // spawn key, label, plan-rect names that count as this room, plan tint
+  ['hall', 'Hall', ['Hall', 'Corridor', 'Storage'], 'hall'],
+  ['living', 'Living room', ['Living'], 'day'],
+  ['kitchen', 'Kitchen', ['Kitchen'], 'day'],
+  ['bathroom', 'Bathroom', ['Bathroom'], 'wet'],
+  ['toilet', 'Toilet', ['Toilet'], 'wet'],
+  ['bedroom1', 'Bedroom 1', ['Bedroom 1'], 'night'],
+  ['study', 'Study', ['Study'], 'day'],
+  ['balcony', 'Balcony', ['Balcony'], 'hall'],
+];
+const PAINTS = [   // name, hex
+  ['Warm white', '#ece7dd'], ['Greige', '#cfc6b8'], ['Sage', '#a8b09a'], ['Eucalyptus', '#7f9183'], ['Deep green', '#3f5546'],
+  ['Dusty blue', '#8fa3b0'], ['Blush', '#ddb8aa'], ['Terracotta', '#c0775a'], ['Ochre', '#c9a055'], ['Charcoal', '#4a4a48'],
+];
+const PAINTABLE = /^Wall (warm white|sage)$/;
+const TILES = {
+  rio_turquoise: { name: 'Rio Turquoise', note: 'lively teal, glazed', color: '#3d8a85' },
+  lume_green:    { name: 'Lume Green',    note: 'soft sage, calm',     color: '#71896a' },
+  oxford_forest: { name: 'Oxford Forest', note: 'deep forest green',   color: '#24402f' },
+};
+const EYE = 1.6, RADIUS = 0.22, WALK = 1.5, RUN = 3.0;
+const $ = (id) => document.getElementById(id);
+const touchFirst = matchMedia('(pointer: coarse)').matches;
+
+// ---------- renderer & scene
+const canvas = $('view');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, touchFirst ? 1.5 : 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.0;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xcfe0ee);
+const camera = new THREE.PerspectiveCamera(72, 1, 0.05, 200);
+camera.rotation.order = 'YXZ';
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(renderer), 0.04).texture;
+scene.add(new THREE.HemisphereLight(0xfff6ea, 0x8f806c, 0.8));
+
+function resize() {
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
+  camera.fov = w < h ? 80 : 70;
+  camera.updateProjectionMatrix();
+  drawPlanBase();
+}
+new ResizeObserver(resize).observe(canvas);
+
+// ---------- state
+let meta = null, colliders = [], tileMat = null, modelRoot = null;
+let doors = [];          // {id, label, hinge, closed, swing, length, node, angle, target}
+let paintMeshes = [];    // wall meshes that take vertex-colour paint
+const me = { x: 0, y: 0, yaw: 0, pitch: -0.05 };
+const P3 = (x, y, z = 0) => new THREE.Vector3(x, z, -y);   // plan (x east, y north) -> three
+
+// ---------- loading
+async function fetchBuffer(url, onProgress) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`${url} answered ${res.status}`);
+  const total = +res.headers.get('content-length') || 0;
+  if (!res.body || !res.body.getReader) return res.arrayBuffer();
+  const reader = res.body.getReader(); const chunks = []; let got = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value); got += value.length; onProgress(total ? got / total : null, got);
+  }
+  const out = new Uint8Array(got); let o = 0;
+  for (const c of chunks) { out.set(c, o); o += c.length; }
+  return out.buffer;
+}
+
+async function boot() {
+  try {
+    meta = await (await fetch('apartment.json')).json();
+    colliders = meta.collision;
+    // the GLB ships as base64 inside JSON, because artifact hosting doesn't serve .glb files
+    const raw = await fetchBuffer('apartment.glb.json', (f, bytes) => {
+      $('bar').style.width = f == null ? '60%' : `${Math.round(f * 100)}%`;
+      $('load-msg').textContent = `Loading the 3D model · ${(bytes / 1048576).toFixed(1)} MB`;
+    });
+    $('load-msg').textContent = 'Placing the furniture…';
+    const bin = atob(JSON.parse(new TextDecoder().decode(raw)).glb_base64);
+    const buf = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+    // GLTFLoader picks ImageBitmapLoader (fetch) or TextureLoader (<img>) when it is constructed;
+    // hiding createImageBitmap for that moment makes embedded textures load as images
+    const gltf = await new Promise((ok, fail) => {
+      const cib = window.createImageBitmap; window.createImageBitmap = undefined;
+      try { new GLTFLoader().parse(buf.buffer, './', ok, fail); } finally { window.createImageBitmap = cib; }
+    });
+    setupModel(gltf.scene);
+    buildUI();
+    buildPaintUI();
+    restorePaint();
+    drawPlanBase();   // the plan needs the model's bounds, so draw it once the model is in
+    goTo('hall');
+    $('loader').hidden = true;
+    requestAnimationFrame(loop);
+  } catch (err) {
+    console.error(err);
+    $('bar').style.width = '0';
+    $('load-msg').textContent = `The model could not be loaded (${err.message}). Reload the page to try again.`;
+  }
+}
+
+function setupModel(root) {
+  root.traverse((o) => {
+    if (!o.isMesh) return;
+    const n = o.material.name || '';
+    o.castShadow = !/Glass|Foliage|Distant|LED/.test(n);
+    o.receiveShadow = !/Glass|Foliage|Distant/.test(n);
+    if ('envMapIntensity' in o.material) o.material.envMapIntensity = 0.32;
+    if (n === 'Oak floor') o.material.roughness = 0.62;   // matte floor; avoids bright env-map blotches
+    if (n === 'Bath wall tile') {
+      // the render's glossy clear-coat mirrors the bright environment in real time and washes the green out
+      tileMat = o.material;
+      o.material.roughness = 0.55;
+      if ('clearcoat' in o.material) o.material.clearcoat = 0;
+      o.material.envMapIntensity = 0.12;
+    }
+    if (/Glass/.test(n)) { o.material.depthWrite = false; o.renderOrder = 2; }
+    if (PAINTABLE.test(n)) paintMeshes.push(o);
+  });
+  scene.add(root);
+  modelRoot = root;
+  doors = (meta.doors || []).map((d) => ({ ...d, node: root.getObjectByName(d.node), angle: 0, target: 0 }))
+                            .filter((d) => d.node);
+
+  // sun through the north windows, same direction as the Blender renders
+  const [x0, y0, x1, y1] = bounds();
+  const c = P3((x0 + x1) / 2, (y0 + y1) / 2);
+  const dir = new THREE.Vector3(0.45, -0.75, 1.0).normalize();   // Blender (0.45,-1,-0.75) in three axes
+  const sun = new THREE.DirectionalLight(0xfff0dc, 3.2);
+  sun.position.copy(c).addScaledVector(dir, -18);
+  sun.target.position.copy(c);
+  sun.castShadow = true;
+  const s = sun.shadow; s.mapSize.set(touchFirst ? 2048 : 4096, touchFirst ? 2048 : 4096);
+  Object.assign(s.camera, { left: -9, right: 9, top: 9, bottom: -9, near: 1, far: 40 });
+  s.bias = -0.0004; s.normalBias = 0.03;
+  scene.add(sun, sun.target);
+
+  // a warm ceiling light per room
+  for (const r of meta.rooms) {
+    if (r.name === 'Storage' || r.name === 'Balcony') continue;
+    const [a, b, cc, d] = r.rect;
+    const area = (cc - a) * (d - b);   // small rooms (toilet, bathroom) get a dimmer lamp
+    const l = new THREE.PointLight(0xffe0bd, 2.4 * Math.min(1, Math.max(0.3, area / 15)), 7, 2);
+    l.position.copy(P3((a + cc) / 2, (b + d) / 2, meta.height - 0.3));
+    scene.add(l);
+  }
+}
+
+// ---------- collision
+function leafEnd(d) {   // plan-space end of a door leaf at its current angle
+  const a = (d.closed * Math.PI) / 180 + d.angle;
+  return [d.hinge[0] + Math.cos(a) * d.length, d.hinge[1] + Math.sin(a) * d.length];
+}
+function segDist2(px, py, ax, ay, bx, by) {
+  const vx = bx - ax, vy = by - ay;
+  const t = Math.max(0, Math.min(1, ((px - ax) * vx + (py - ay) * vy) / (vx * vx + vy * vy)));
+  return (px - ax - t * vx) ** 2 + (py - ay - t * vy) ** 2;
+}
+function hit(x, y) {
+  for (const [x0, y0, x1, y1] of colliders) {
+    const cx = Math.max(x0, Math.min(x, x1)), cy = Math.max(y0, Math.min(y, y1));
+    if ((x - cx) ** 2 + (y - cy) ** 2 < RADIUS * RADIUS) return true;
+  }
+  for (const d of doors) {
+    const [ex, ey] = leafEnd(d);
+    if (segDist2(x, y, d.hinge[0], d.hinge[1], ex, ey) < (RADIUS + 0.03) ** 2) return true;
+  }
+  return false;
+}
+
+// ---------- doors
+function wallBetween(x0, y0, x1, y1) {   // any collider on the straight line, stopping short of the door itself
+  const n = Math.ceil(Math.hypot(x1 - x0, y1 - y0) / 0.05);
+  for (let i = 1; i < n - 4; i++) {
+    const x = x0 + ((x1 - x0) * i) / n, y = y0 + ((y1 - y0) * i) / n;
+    if (colliders.some(([a, b, c, d]) => x > a && x < c && y > b && y < d)) return true;
+  }
+  return false;
+}
+function nearestDoor() {
+  let best = null, dist = 1.6;
+  for (const d of doors) {
+    const a = (d.closed * Math.PI) / 180;   // midpoint of the closed leaf = the doorway
+    const mx = d.hinge[0] + Math.cos(a) * d.length / 2, my = d.hinge[1] + Math.sin(a) * d.length / 2;
+    const k = Math.hypot(me.x - mx, me.y - my);
+    if (k < dist && !wallBetween(me.x, me.y, mx, my)) { best = d; dist = k; }
+  }
+  return best;
+}
+function toggleDoor(d = nearestDoor()) {
+  if (!d) return;
+  d.target = d.target ? 0 : (d.swing * Math.PI) / 180;
+  hideHint();
+}
+let shownDoor;
+function updateDoorPrompt() {
+  const d = nearestDoor();
+  const key = d ? d.id + (d.target ? ':open' : ':shut') : null;
+  if (key === shownDoor) return;
+  shownDoor = key;
+  $('door-btn').hidden = !d;
+  if (d) $('door-text').textContent = `${d.target ? 'Close' : 'Open'} the ${d.label}`;
+}
+$('door-btn').addEventListener('click', () => { toggleDoor(); canvas.focus({ preventScroll: true }); });
+
+// ---------- wall paint (vertex colours on the wall meshes, one wall of one room at a time)
+let painting = false, paintHex = PAINTS[2][1];
+const ray = new THREE.Raycaster();
+const PAINT_KEY = 'liendenhof-walkthrough-paint';
+function prepPaint(o) {
+  if (o.userData.paint) return o.userData.paint;
+  const g = o.geometry, pos = g.attributes.position, n = pos.count;
+  o.updateWorldMatrix(true, false);
+  const base = o.material.color.clone();
+  const col = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) { col[i * 3] = base.r; col[i * 3 + 1] = base.g; col[i * 3 + 2] = base.b; }
+  g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  o.material.vertexColors = true; o.material.color.set(1, 1, 1); o.material.needsUpdate = true;
+  // per-triangle world normal + centroid, so a whole wall can be selected at once
+  const idx = g.index ? g.index.array : null, tris = [];
+  const v = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()];
+  const nTri = (idx ? idx.length : n) / 3;
+  for (let t = 0; t < nTri; t++) {
+    const ids = [0, 1, 2].map((k) => (idx ? idx[t * 3 + k] : t * 3 + k));
+    ids.forEach((id, k) => v[k].fromBufferAttribute(pos, id).applyMatrix4(o.matrixWorld));
+    const nrm = new THREE.Vector3().subVectors(v[1], v[0]).cross(new THREE.Vector3().subVectors(v[2], v[0])).normalize();
+    const c = v[0].clone().add(v[1]).add(v[2]).multiplyScalar(1 / 3);
+    tris.push({ ids, nrm, c });
+  }
+  return (o.userData.paint = { base, tris });
+}
+function wallKey(nrm, plane, room) { return `${room}|${Math.round(nrm.x)},${Math.round(nrm.z)}|${plane.toFixed(2)}`; }
+function roomName(p3, nrm) {   // room on the painted side of the wall
+  const q = p3.clone().addScaledVector(nrm, 0.06);
+  return roomAt(q.x, -q.z)?.name || 'outside';
+}
+function applyPaint(nrm, plane, room, hex) {
+  const c = hex ? new THREE.Color(hex) : null;   // THREE.Color parses sRGB hex into linear
+  for (const o of paintMeshes) {
+    const P = prepPaint(o), col = o.geometry.attributes.color;
+    for (const t of P.tris) {
+      if (t.nrm.dot(nrm) < 0.98 || Math.abs(t.c.dot(nrm) - plane) > 0.015) continue;
+      if (roomName(t.c, nrm) !== room) continue;
+      const cc = c || P.base;
+      for (const id of t.ids) col.setXYZ(id, cc.r, cc.g, cc.b);
+    }
+    col.needsUpdate = true;
+  }
+}
+function savedPaint() { try { return JSON.parse(localStorage.getItem(PAINT_KEY) || '{}'); } catch (_) { return {}; } }
+function storePaint(all) { try { localStorage.setItem(PAINT_KEY, JSON.stringify(all)); } catch (_) {} }
+function paintAt(ndcX, ndcY) {
+  if (!modelRoot) return;
+  ray.setFromCamera(new THREE.Vector2(ndcX, ndcY), camera);
+  const h = ray.intersectObject(modelRoot, true).find((i) => i.object.visible && !/Glass/.test(i.object.material?.name || ''));
+  if (!h || !PAINTABLE.test(h.object.material.name)) return;
+  const nrm = h.face.normal.clone().transformDirection(h.object.matrixWorld);
+  if (Math.abs(nrm.y) > 0.5) return;   // walls only
+  nrm.set(Math.round(nrm.x), 0, Math.round(nrm.z));
+  const plane = h.point.dot(nrm), room = roomName(h.point, nrm);
+  applyPaint(nrm, plane, room, paintHex);
+  const all = savedPaint(); all[wallKey(nrm, plane, room)] = paintHex; storePaint(all);
+}
+function restorePaint() {
+  for (const [key, hex] of Object.entries(savedPaint())) {
+    const [room, n, plane] = key.split('|'); const [nx, nz] = n.split(',').map(Number);
+    applyPaint(new THREE.Vector3(nx, 0, nz), parseFloat(plane), room, hex);
+  }
+}
+function setPainting(on) {
+  painting = on;
+  $('paint-toggle').setAttribute('aria-pressed', on);
+  canvas.classList.toggle('painting', on);
+  $('crosshair').hidden = !(on && document.pointerLockElement === canvas);
+  hideHint();
+}
+function pickPaint(hex, name) {
+  paintHex = hex;
+  document.querySelectorAll('#paints button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.hex === hex));
+  $('paint-name').textContent = name || hex.toUpperCase();
+  if (!painting) setPainting(true);
+}
+function buildPaintUI() {
+  for (const [name, hex] of PAINTS) {
+    const b = document.createElement('button');
+    b.type = 'button'; b.dataset.hex = hex; b.title = name; b.setAttribute('aria-label', name);
+    b.style.background = hex; b.setAttribute('aria-pressed', hex === paintHex);
+    b.addEventListener('click', () => pickPaint(hex, name));
+    $('paints').append(b);
+  }
+  $('paint-name').textContent = PAINTS[2][0];
+  $('paint-toggle').addEventListener('click', () => setPainting(!painting));
+  $('paint-custom').addEventListener('input', (e) => pickPaint(e.target.value));
+  $('paint-reset').addEventListener('click', () => {
+    for (const o of paintMeshes) {
+      const P = prepPaint(o), col = o.geometry.attributes.color;
+      for (let i = 0; i < col.count; i++) col.setXYZ(i, P.base.r, P.base.g, P.base.b);
+      col.needsUpdate = true;
+    }
+    storePaint({});
+  });
+}
+function freeSpot(x, y) {
+  if (!hit(x, y)) return [x, y];
+  for (let r = 0.08; r < 1.6; r += 0.08)
+    for (let a = 0; a < Math.PI * 2; a += Math.PI / 12) {
+      const px = x + Math.cos(a) * r, py = y + Math.sin(a) * r;
+      if (!hit(px, py)) return [px, py];
+    }
+  return [x, y];
+}
+function step(dx, dy) {
+  if (!hit(me.x + dx, me.y + dy)) { me.x += dx; me.y += dy; return; }
+  if (!hit(me.x + dx, me.y)) me.x += dx;
+  else if (!hit(me.x, me.y + dy)) me.y += dy;
+}
+
+// ---------- rooms & UI
+function roomAt(x, y) {
+  let best = null, area = Infinity;
+  for (const r of meta.rooms) {
+    const [a, b, c, d] = r.rect;
+    if (x >= a && x <= c && y >= b && y <= d && (c - a) * (d - b) < area) { best = r; area = (c - a) * (d - b); }
+  }
+  return best;
+}
+function roomKey(rect) { return rect && ROOMS.find((r) => r[2].includes(rect.name)); }
+
+function goTo(key) {
+  const s = meta.spawn[key]; if (!s) return;
+  [me.x, me.y] = freeSpot(s[0], s[1]);
+  me.yaw = (s[2] * Math.PI) / 180; me.pitch = -0.08;
+  canvas.focus({ preventScroll: true });
+}
+
+function buildUI() {
+  const nav = $('rooms');
+  ROOMS.forEach(([key, label], i) => {
+    if (!meta.spawn[key]) return;
+    const b = document.createElement('button');
+    b.type = 'button'; b.dataset.key = key;
+    b.innerHTML = `<span>${label}</span><kbd>${i + 1}</kbd>`;
+    b.addEventListener('click', () => goTo(key));
+    nav.append(b);
+  });
+  const sw = $('swatches');
+  for (const [key, t] of Object.entries(TILES)) {
+    if (!meta.tiles?.[key]) continue;
+    const b = document.createElement('button');
+    b.type = 'button'; b.dataset.tile = key; b.setAttribute('aria-pressed', key === 'rio_turquoise');
+    b.innerHTML = `<i class="chip" style="background-color:${t.color}"></i><span>${t.name}<small>${t.note}</small></span>`;
+    b.title = t.name;
+    b.addEventListener('click', () => setTile(key));
+    sw.append(b);
+  }
+  if (!tileMat) document.querySelector('.tiles').hidden = true;
+}
+
+const tileCache = {};
+function setTile(key) {
+  document.querySelectorAll('#swatches button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.tile === key));
+  const apply = (tex) => { tileMat.map = tex; tileMat.needsUpdate = true; };
+  if (tileCache[key]) return apply(tileCache[key]);
+  new THREE.TextureLoader().load(meta.tiles[key], (tex) => {
+    const o = tileMat.map;
+    tex.flipY = false; tex.colorSpace = THREE.SRGBColorSpace;
+    tex.wrapS = o ? o.wrapS : THREE.RepeatWrapping; tex.wrapT = o ? o.wrapT : THREE.RepeatWrapping;
+    tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    tileCache[key] = tex; apply(tex);
+  });
+}
+
+let lastRoom = null;
+function updateRoomLabel() {
+  const rect = roomAt(me.x, me.y);
+  const r = roomKey(rect);
+  const key = r ? r[0] : null;
+  if (key === lastRoom) return;
+  lastRoom = key;
+  $('room-name').textContent = r ? r[1] : 'Doorway';
+  if (r) {
+    const rects = meta.rooms.filter((m) => r[2].includes(m.name));
+    const main = rects[0].rect;
+    const area = rects.reduce((s, m) => s + (m.rect[2] - m.rect[0]) * (m.rect[3] - m.rect[1]), 0);
+    $('room-dims').textContent = `≈ ${(main[2] - main[0]).toFixed(2)} × ${(main[3] - main[1]).toFixed(2)} m · ${area.toFixed(1)} m²`;
+  } else $('room-dims').textContent = '';
+  document.querySelectorAll('#rooms button').forEach((b) => b.setAttribute('aria-current', b.dataset.key === key));
+}
+
+// ---------- floor plan
+const plan = $('plan'), pctx = plan.getContext('2d');
+let pv = null;   // plan view transform
+function bounds() {
+  const all = meta.walls.concat(meta.rooms.map((r) => r.rect));
+  return [Math.min(...all.map((r) => r[0])), Math.min(...all.map((r) => r[1])),
+          Math.max(...all.map((r) => r[2])), Math.max(...all.map((r) => r[3]))];
+}
+function css(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+function drawPlanBase() {
+  if (!meta) return;
+  const w = plan.clientWidth, h = plan.clientHeight, dpr = devicePixelRatio || 1;
+  plan.width = w * dpr; plan.height = h * dpr;
+  const [x0, y0, x1, y1] = bounds(), pad = 4;
+  const s = Math.min((w - 2 * pad) / (x1 - x0), (h - 2 * pad) / (y1 - y0));
+  const ox = (w - (x1 - x0) * s) / 2, oy = (h - (y1 - y0) * s) / 2;
+  pv = { dpr, s, X: (x) => ox + (x - x0) * s, Y: (y) => h - oy - (y - y0) * s, inv: (px, py) => [x0 + (px - ox) / s, y0 + (h - oy - py) / s] };
+  $('plan-scale').textContent = `1 m = ${Math.round(s)} px`;
+}
+function drawPlan() {
+  if (!pv) return;
+  const { dpr, s, X, Y } = pv;
+  pctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  pctx.clearRect(0, 0, plan.width, plan.height);
+  const tint = { day: css('--room-day'), wet: css('--room-wet'), night: css('--room-night'), hall: css('--room-hall') };
+  for (const r of meta.rooms) {
+    const k = roomKey(r);
+    pctx.fillStyle = k ? tint[k[3]] : tint.hall;
+    const [a, b, c, d] = r.rect;
+    pctx.fillRect(X(a), Y(d), (c - a) * s, (d - b) * s);
+  }
+  if (lastRoom) {   // highlight current room
+    pctx.fillStyle = css('--oak'); pctx.globalAlpha = 0.35;
+    for (const r of meta.rooms) if (roomKey(r)?.[0] === lastRoom) {
+      const [a, b, c, d] = r.rect; pctx.fillRect(X(a), Y(d), (c - a) * s, (d - b) * s);
+    }
+    pctx.globalAlpha = 1;
+  }
+  pctx.fillStyle = css('--wall');
+  for (const [a, b, c, d] of meta.walls) pctx.fillRect(X(a), Y(d), Math.max(1, (c - a) * s), Math.max(1, (d - b) * s));
+  pctx.strokeStyle = css('--wall'); pctx.lineWidth = 1.5;   // door leaves at their current angle
+  for (const d of doors) {
+    const [ex, ey] = leafEnd(d);
+    pctx.beginPath(); pctx.moveTo(X(d.hinge[0]), Y(d.hinge[1])); pctx.lineTo(X(ex), Y(ey)); pctx.stroke();
+  }
+  // me: view cone + dot
+  const px = X(me.x), py = Y(me.y), a = -me.yaw, fov = 0.6;
+  pctx.fillStyle = css('--me'); pctx.globalAlpha = 0.22;
+  pctx.beginPath(); pctx.moveTo(px, py); pctx.arc(px, py, 2.2 * s, a - fov, a + fov); pctx.closePath(); pctx.fill();
+  pctx.globalAlpha = 1;
+  pctx.beginPath(); pctx.arc(px, py, 4, 0, Math.PI * 2); pctx.fill();
+}
+plan.addEventListener('click', (e) => {
+  if (!pv) return;
+  const r = plan.getBoundingClientRect();
+  const [x, y] = pv.inv(e.clientX - r.left, e.clientY - r.top);
+  if (!roomAt(x, y)) return;
+  [me.x, me.y] = freeSpot(x, y);
+});
+
+// ---------- input
+const keys = new Set();
+addEventListener('keydown', (e) => {
+  if (e.target.closest && e.target.closest('button') && (e.key === ' ' || e.key === 'Enter')) return;
+  if (e.target.matches && e.target.matches('input')) return;
+  keys.add(e.code);
+  const n = parseInt(e.key, 10);
+  if (n >= 1 && n <= ROOMS.length) goTo(ROOMS[n - 1][0]);
+  if (e.code === 'KeyE' && !e.repeat) toggleDoor();
+  if (e.code === 'KeyP' && !e.repeat) setPainting(!painting);
+  if (/^(Arrow|Space)/.test(e.code)) e.preventDefault();
+});
+addEventListener('keyup', (e) => keys.delete(e.code));
+addEventListener('blur', () => keys.clear());
+
+function look(dx, dy, k = 0.0025) {
+  me.yaw -= dx * k;
+  me.pitch = Math.max(-1.3, Math.min(1.3, me.pitch - dy * k));
+  hideHint();
+}
+let drag = null, joy = null, lookTouch = null;
+const joyEl = $('joy');
+let press = null;   // for telling a paint click/tap from a look-around drag
+function ndcOf(e) {
+  const r = canvas.getBoundingClientRect();
+  return [((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1];
+}
+canvas.addEventListener('pointerdown', (e) => {
+  press = { x: e.clientX, y: e.clientY, t: performance.now() };
+  if (e.pointerType === 'mouse') {
+    drag = { x: e.clientX, y: e.clientY };
+    if (painting && document.pointerLockElement === canvas) { paintAt(0, 0); return; }   // paint at the crosshair
+    if (painting) return;   // paint mode without mouse lock: click paints, drag looks
+    if (document.pointerLockElement !== canvas && canvas.requestPointerLock) {
+      try { const p = canvas.requestPointerLock(); if (p && p.catch) p.catch(() => {}); } catch (_) {}
+    }
+    return;
+  }
+  canvas.setPointerCapture(e.pointerId);
+  if (e.clientX < innerWidth * 0.45 && !joy) {
+    joy = { id: e.pointerId, ox: e.clientX, oy: e.clientY, mx: 0, my: 0 };
+    joyEl.hidden = false; joyEl.style.left = `${e.clientX}px`; joyEl.style.top = `${e.clientY}px`;
+    joyEl.firstElementChild.style.transform = '';
+  } else if (!lookTouch) lookTouch = { id: e.pointerId, x: e.clientX, y: e.clientY };
+});
+canvas.addEventListener('pointermove', (e) => {
+  if (e.pointerType === 'mouse') {
+    if (document.pointerLockElement === canvas) look(e.movementX, e.movementY);
+    else if (drag && e.buttons) { look(e.clientX - drag.x, e.clientY - drag.y, 0.004); drag = { x: e.clientX, y: e.clientY }; }
+    return;
+  }
+  if (joy && e.pointerId === joy.id) {
+    let dx = e.clientX - joy.ox, dy = e.clientY - joy.oy;
+    const len = Math.hypot(dx, dy), max = 46;
+    if (len > max) { dx *= max / len; dy *= max / len; }
+    joy.mx = dx / max; joy.my = dy / max;
+    joyEl.firstElementChild.style.transform = `translate(${dx}px, ${dy}px)`;
+    hideHint();
+  } else if (lookTouch && e.pointerId === lookTouch.id) {
+    look(e.clientX - lookTouch.x, e.clientY - lookTouch.y, 0.005);
+    lookTouch.x = e.clientX; lookTouch.y = e.clientY;
+  }
+});
+const endPointer = (e) => {
+  const tap = press && e.type === 'pointerup' && Math.hypot(e.clientX - press.x, e.clientY - press.y) < 6 &&
+              performance.now() - press.t < 400;
+  press = null;
+  if (painting && tap && document.pointerLockElement !== canvas && !(joy && e.pointerId === joy.id)) paintAt(...ndcOf(e));
+  if (e.pointerType === 'mouse') { drag = null; return; }
+  if (joy && e.pointerId === joy.id) { joy = null; joyEl.hidden = true; }
+  if (lookTouch && e.pointerId === lookTouch.id) lookTouch = null;
+};
+canvas.addEventListener('pointerup', endPointer);
+canvas.addEventListener('pointercancel', endPointer);
+document.addEventListener('pointerlockchange', () => {
+  canvas.classList.toggle('locked', document.pointerLockElement === canvas);
+  $('crosshair').hidden = !(painting && document.pointerLockElement === canvas);
+});
+
+let hintTimer = setTimeout(hideHint, 12000);
+function hideHint() { $('hint').classList.add('gone'); clearTimeout(hintTimer); }
+if (touchFirst) $('hint').hidden = true;
+
+// ---------- loop
+let prev = performance.now();
+function loop(now) {
+  const dt = Math.min(0.05, (now - prev) / 1000); prev = now;
+  let f = 0, r = 0;
+  if (keys.has('KeyW') || keys.has('ArrowUp')) f += 1;
+  if (keys.has('KeyS') || keys.has('ArrowDown')) f -= 1;
+  if (keys.has('KeyD')) r += 1;
+  if (keys.has('KeyA')) r -= 1;
+  if (keys.has('ArrowLeft')) me.yaw += 1.8 * dt;
+  if (keys.has('ArrowRight')) me.yaw -= 1.8 * dt;
+  if (joy) { f -= joy.my; r += joy.mx; }
+  const len = Math.hypot(f, r);
+  if (len > 0.05) {
+    if (len > 1) { f /= len; r /= len; }
+    const v = (keys.has('ShiftLeft') || keys.has('ShiftRight') ? RUN : WALK) * dt;
+    const cy = Math.cos(me.yaw), sy = Math.sin(me.yaw);
+    step((cy * f + sy * r) * v, (sy * f - cy * r) * v);
+    if (keys.size) hideHint();
+  }
+  for (const d of doors) {   // swing doors towards their target angle
+    const diff = d.target - d.angle;
+    if (Math.abs(diff) > 1e-4) {
+      const before = d.angle;
+      d.angle += Math.sign(diff) * Math.min(Math.abs(diff), 2.6 * dt);
+      d.node.rotation.y = d.angle;
+      if (hit(me.x, me.y)) { d.angle = before; d.node.rotation.y = before; d.target = before; }   // don't swing through me
+    }
+  }
+  updateDoorPrompt();
+  camera.position.copy(P3(me.x, me.y, EYE));
+  camera.rotation.set(me.pitch, me.yaw - Math.PI / 2, 0);
+  updateRoomLabel();
+  drawPlan();
+  renderer.render(scene, camera);
+  requestAnimationFrame(loop);
+}
+
+// test hook, only with #debug in the URL
+if (location.hash === '#debug') window.__wt = { get doors() { return doors; }, me, toggleDoor, paintAt, setPainting, goTo, hit };
+boot();
+</script>
