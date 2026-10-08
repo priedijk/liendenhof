@@ -68,7 +68,7 @@ h2 { font-weight: 700; font-size: 22px; margin: 0; text-wrap: balance; }
 .spec dt { font: 12px/1.6 var(--f-mono); color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
 .spec dd { margin: 0; }
 
-/* rooms: 3 columns; the living room takes two */
+/* rooms: 3 columns; the living room and dining shots take two */
 .grid { display: grid; gap: 24px 20px; grid-template-columns: 1fr; }
 @media (min-width: 700px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (min-width: 1000px) { .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } .feature { grid-column: span 2; } }
@@ -103,7 +103,7 @@ figcaption { display: grid; gap: 2px; }
     <h1>Liendenhof Renders</h1>
     <p class="lede">Second pass of the renovated apartment, rendered in Blender (Cycles) from the floor plan. It has your kitchen, bathroom and floor changes, a study instead of the second bedroom, and new lighting and cameras throughout.</p>
     <div class="meta">
-      <span>Rendered <b>8 Oct 2026</b></span><span>Ceiling <b>2.60 m</b></span><span>Frames <b>1600 × 1200</b></span><span>Cycles <b>256 samples</b></span>
+      <span>Rendered <b>8 Oct 2026</b></span><span>Ceiling <b>2.60 m</b></span><span>Frames <b>1600 × 1200</b></span><span>Cycles <b>384 samples</b></span>
       <a class="walk" href="../">Walk through it in 3D →</a>
     </div>
   </header>
@@ -145,7 +145,7 @@ figcaption { display: grid; gap: 2px; }
     <div class="section-head"><h2 id="rooms-h">Rooms</h2><span class="hint">click a render to enlarge</span></div>
     <div class="grid">
       <figure class="room feature">
-        <button class="shot" data-src="renders/living.jpg" data-cap="Woonkamer"><img src="renders/living.jpg" alt="Living room with sofa, dining table by the window, TV wall and the opening to the study" loading="lazy"></button>
+        <button class="shot" data-src="renders/living.jpg" data-cap="Woonkamer"><img src="renders/living.jpg" alt="Living room from the corridor door: dining table in front, sofa, coffee table and floor lamp towards the window, TV wall and the opening to the study on the left" loading="lazy"></button>
         <figcaption><span class="room-name">Living room <span>· Woonkamer</span></span><span class="dims">4.03 × ~6.10 m · 150 cm opening to the study · openable balcony door</span></figcaption>
         <span class="room-note">The tabby on the sofa is one of the two cats.</span>
       </figure>
@@ -157,6 +157,11 @@ figcaption { display: grid; gap: 2px; }
       <figure class="room">
         <button class="shot" data-src="renders/study.jpg" data-cap="Werkkamer"><img src="renders/study.jpg" alt="Study with a long oak desk, ultrawide monitor and PC, shelves, and a cat tree by the window" loading="lazy"></button>
         <figcaption><span class="room-name">Study <span>· Werkkamer</span></span><span class="dims">2.82 m wide · 240 × 80 cm desk · 34″ ultrawide</span></figcaption>
+      </figure>
+      <figure class="room feature">
+        <button class="shot" data-src="renders/dining.jpg" data-cap="Eethoek"><img src="renders/dining.jpg" alt="Looking from the window end past the sofa and coffee table to the oak dining table with six chairs and a black pendant, with the kitchen behind it" loading="lazy"></button>
+        <figcaption><span class="room-name">Dining <span>· Eethoek</span></span><span class="dims">160 × 90 cm oak table · six chairs · 0.9 m clear of the kitchen</span></figcaption>
+        <span class="room-note">The table now stands at the kitchen end, so the lounge gets the window side of the room.</span>
       </figure>
       <figure class="room">
         <button class="shot" data-src="renders/bedroom1.jpg" data-cap="Slaapkamer"><img src="renders/bedroom1.jpg" alt="Bedroom with a double bed and nightstands" loading="lazy"></button>
@@ -173,6 +178,9 @@ figcaption { display: grid; gap: 2px; }
     <div>
       <h3>Changed in this round</h3>
       <ul>
+        <li>The dining table moved from the window to the kitchen end: 160 × 90 cm oak, six chairs and a pendant above it. The lounge moved half a metre towards the window, with the floor lamp at the sofa's south end.</li>
+        <li>The walk-through now uses lighting baked in Cycles, so it looks much closer to these renders.</li>
+        <li>The cats walk on four legs, meow for real, follow you around now and then, purr when you click them, and nap on the bed, the sofa or the cat tree.</li>
         <li>The kitchen corner next to the oven is now solid wall from floor to ceiling. The counter ends at it, and the upper cabinets now continue over the sink.</li>
         <li>The bathroom has the washer column in the corner, the radiator next to it, glass and shower head on the sink side, and plain sandy 60 × 60 tiles on the floor and on the walls outside the shower. The bathroom and toilet are lit more softly.</li>
         <li>The toilet tiles match the bathroom.</li>
