@@ -165,6 +165,7 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f
     <span class="label">Liendenhof · 2nd floor · renovation concept</span>
     <h1>Walk through the apartment</h1>
     <div class="where"><span class="room" id="room-name">Hall</span><span class="dims" id="room-dims"></span></div>
+    <div><button type="button" class="toggle" id="sound-btn" aria-pressed="true">Cat sounds on</button></div>
   </header>
 
   <nav class="rooms panel" id="rooms" aria-label="Jump to room">
@@ -199,7 +200,7 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f
   <div class="crosshair" id="crosshair" hidden></div>
 
   <div class="hint panel" id="hint">
-    <span><b>Click</b> to look around</span><span><b>W A S D</b> walk</span><span><b>Shift</b> faster</span><span><b>E</b> doors</span><span><b>P</b> paint</span><span><b>1–7</b> rooms</span><span><b>Esc</b> release mouse</span>
+    <span><b>Click</b> to look around</span><span><b>W A S D</b> walk</span><span><b>Shift</b> faster</span><span><b>E</b> doors</span><span><b>P</b> paint</span><span><b>Click</b> a cat to hear it</span><span><b>1–7</b> rooms</span><span><b>Esc</b> release mouse</span>
   </div>
 
   <div class="joy" id="joy" hidden><i></i></div>
@@ -321,6 +322,7 @@ async function boot() {
       try { new GLTFLoader().parse(buf.buffer, './', ok, fail); } finally { window.createImageBitmap = cib; }
     });
     setupModel(gltf.scene);
+    setupCats(gltf.scene);
     buildUI();
     buildPaintUI();
     restorePaint();
@@ -342,7 +344,10 @@ function setupModel(root) {
     o.castShadow = !/Glass|Foliage|Distant|LED/.test(n);
     o.receiveShadow = !/Glass|Foliage|Distant/.test(n);
     if ('envMapIntensity' in o.material) o.material.envMapIntensity = 0.32;
-    if (n === 'Oak floor') o.material.roughness = 0.62;   // matte floor; avoids bright env-map blotches
+    if (n === 'Oak floor') {   // matte, and a touch brighter so it reads like the Cycles renders
+      o.material.roughness = 0.62;
+      o.material.color.setScalar(1.25);
+    }
     if (n === 'Bath wall tile') {
       // the render's glossy clear-coat mirrors the bright environment in real time and washes the green out
       tileMat = o.material;
@@ -437,7 +442,222 @@ function updateDoorPrompt() {
   $('door-btn').hidden = !d;
   if (d) $('door-text').textContent = `${d.target ? 'Close' : 'Open'} the ${d.label}`;
 }
+$('sound-btn').addEventListener('click', () => {
+  soundOn = !soundOn;
+  listener.setMasterVolume(soundOn ? 1 : 0);
+  $('sound-btn').setAttribute('aria-pressed', soundOn);
+  $('sound-btn').textContent = soundOn ? 'Cat sounds on' : 'Cat sounds off';
+});
 $('door-btn').addEventListener('click', () => { toggleDoor(); canvas.focus({ preventScroll: true }); });
+
+// ---------- cats: they hop off their perch, wander between rooms, sit for a while, meow, and go back up
+const CAT_R = 0.13, CELL = 0.1, CAT_SPEED = 0.42, STRIDE = 0.2;
+const listener = new THREE.AudioListener();
+camera.add(listener);
+let soundOn = true, grid = null;
+const cats = [];
+const rnd = (a, b) => a + Math.random() * (b - a);
+
+async function makeMeow(pitch) {   // synthesized "mi-aaow": sawtooth through two sweeping formant filters
+  const sr = 44100, dur = 0.8, ctx = new OfflineAudioContext(1, Math.ceil(sr * dur), sr);
+  const osc = ctx.createOscillator(); osc.type = 'sawtooth';
+  const f0 = 560 * pitch;
+  osc.frequency.setValueAtTime(f0 * 0.8, 0);
+  osc.frequency.linearRampToValueAtTime(f0 * 1.25, 0.16);
+  osc.frequency.linearRampToValueAtTime(f0 * 1.05, 0.42);
+  osc.frequency.linearRampToValueAtTime(f0 * 0.68, dur);
+  const lfo = ctx.createOscillator(), lfoGain = ctx.createGain();
+  lfo.frequency.value = 6.5; lfoGain.gain.value = 10; lfo.connect(lfoGain).connect(osc.frequency);
+  const f1 = ctx.createBiquadFilter(), f2 = ctx.createBiquadFilter();
+  f1.type = f2.type = 'bandpass'; f1.Q.value = 5; f2.Q.value = 7;
+  f1.frequency.setValueAtTime(450, 0); f1.frequency.linearRampToValueAtTime(950, 0.22); f1.frequency.linearRampToValueAtTime(520, dur);
+  f2.frequency.setValueAtTime(2400, 0); f2.frequency.linearRampToValueAtTime(1500, 0.3); f2.frequency.linearRampToValueAtTime(950, dur);
+  const env = ctx.createGain();
+  env.gain.setValueAtTime(0.0001, 0); env.gain.exponentialRampToValueAtTime(1, 0.07);
+  env.gain.setValueAtTime(1, dur * 0.55); env.gain.exponentialRampToValueAtTime(0.0001, dur);
+  osc.connect(f1); osc.connect(f2); f1.connect(env); f2.connect(env); env.connect(ctx.destination);
+  osc.start(0); lfo.start(0); osc.stop(dur); lfo.stop(dur);
+  const buf = await ctx.startRendering(), d = buf.getChannelData(0);
+  let peak = 0; for (const v of d) peak = Math.max(peak, Math.abs(v));
+  for (let i = 0; i < d.length; i++) d[i] *= 0.8 / (peak || 1);
+  return buf;
+}
+function unlockAudio() { const c = THREE.AudioContext.getContext(); if (c.state === 'suspended') c.resume(); }
+addEventListener('pointerdown', unlockAudio); addEventListener('keydown', unlockAudio);
+
+// walkable grid: inside a room (not balcony/storage), clear of anything at cat height and of closed doors
+function buildGrid() {
+  const [x0, y0, x1, y1] = bounds();
+  const nx = Math.ceil((x1 - x0) / CELL), ny = Math.ceil((y1 - y0) / CELL), free = new Uint8Array(nx * ny);
+  const rooms = meta.rooms.filter((r) => r.name !== 'Balcony' && r.name !== 'Storage').map((r) => r.rect);
+  const blocks = meta.cat_collision || meta.collision, g = 0.07;   // g bridges the wall thickness at doorways
+  for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+    const x = x0 + (i + 0.5) * CELL, y = y0 + (j + 0.5) * CELL;
+    if (!rooms.some(([a, b, c, d]) => x > a - g && x < c + g && y > b - g && y < d + g)) continue;
+    if (blocks.some(([a, b, c, d]) => (x - Math.max(a, Math.min(x, c))) ** 2 + (y - Math.max(b, Math.min(y, d))) ** 2 < CAT_R * CAT_R)) continue;
+    if (doors.some((d) => { const a = (d.closed * Math.PI) / 180;
+      return segDist2(x, y, d.hinge[0], d.hinge[1], d.hinge[0] + Math.cos(a) * d.length, d.hinge[1] + Math.sin(a) * d.length) < (CAT_R + 0.05) ** 2; })) continue;
+    free[j * nx + i] = 1;
+  }
+  grid = { x0, y0, nx, ny, free };
+}
+const cellOf = (x, y) => [Math.floor((x - grid.x0) / CELL), Math.floor((y - grid.y0) / CELL)];
+const centre = (i, j) => [grid.x0 + (i + 0.5) * CELL, grid.y0 + (j + 0.5) * CELL];
+const isFree = (i, j) => i >= 0 && j >= 0 && i < grid.nx && j < grid.ny && grid.free[j * grid.nx + i] === 1;
+function nearestFree(i, j) {
+  for (let r = 0; r < 12; r++) for (let di = -r; di <= r; di++) for (let dj = -r; dj <= r; dj++)
+    if (Math.max(Math.abs(di), Math.abs(dj)) === r && isFree(i + di, j + dj)) return [i + di, j + dj];
+  return null;
+}
+function lineFree(x0, y0, x1, y1) {
+  const n = Math.ceil(Math.hypot(x1 - x0, y1 - y0) / (CELL / 2));
+  for (let k = 1; k < n; k++) { const [i, j] = cellOf(x0 + ((x1 - x0) * k) / n, y0 + ((y1 - y0) * k) / n); if (!isFree(i, j)) return false; }
+  return true;
+}
+function findPath(x, y, tx, ty) {   // A* on the grid (8-neighbour), then string-pulled into a few straight legs
+  const s = nearestFree(...cellOf(x, y)), t = nearestFree(...cellOf(tx, ty));
+  if (!s || !t) return null;
+  const N = grid.nx * grid.ny, key = (i, j) => j * grid.nx + i, goal = key(...t);
+  const g = new Float32Array(N).fill(Infinity), from = new Int32Array(N).fill(-1), shut = new Uint8Array(N);
+  const heap = [], push = (k, f) => { heap.push([f, k]); let c = heap.length - 1;
+    while (c > 0) { const p = (c - 1) >> 1; if (heap[p][0] <= heap[c][0]) break; [heap[p], heap[c]] = [heap[c], heap[p]]; c = p; } };
+  const pop = () => { const top = heap[0], last = heap.pop(); if (heap.length) { heap[0] = last; let c = 0;
+    for (;;) { const l = 2 * c + 1, r = l + 1; let m = c;
+      if (l < heap.length && heap[l][0] < heap[m][0]) m = l; if (r < heap.length && heap[r][0] < heap[m][0]) m = r;
+      if (m === c) break; [heap[m], heap[c]] = [heap[c], heap[m]]; c = m; } } return top; };
+  const h = (i, j) => { const dx = Math.abs(i - t[0]), dy = Math.abs(j - t[1]); return Math.max(dx, dy) + 0.414 * Math.min(dx, dy); };
+  g[key(...s)] = 0; push(key(...s), h(...s));
+  while (heap.length) {
+    const [, k] = pop(); if (shut[k]) continue; shut[k] = 1;
+    if (k === goal) break;
+    const i = k % grid.nx, j = (k / grid.nx) | 0;
+    for (const [di, dj] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) {
+      const ni = i + di, nj = j + dj;
+      if (!isFree(ni, nj) || (di && dj && (!isFree(i + di, j) || !isFree(i, j + dj)))) continue;
+      const nk = key(ni, nj), ng = g[k] + (di && dj ? 1.414 : 1);
+      if (ng < g[nk]) { g[nk] = ng; from[nk] = k; push(nk, ng + h(ni, nj)); }
+    }
+  }
+  if (from[goal] < 0 && key(...s) !== goal) return null;
+  const cells = []; for (let k = goal; k >= 0; k = from[k]) cells.push(centre(k % grid.nx, (k / grid.nx) | 0));
+  cells.reverse();
+  const pts = [[x, y]];
+  for (let a = 0; a < cells.length - 1;) {   // string pulling
+    let b = cells.length - 1;
+    while (b > a + 1 && !lineFree(cells[a][0], cells[a][1], cells[b][0], cells[b][1])) b--;
+    pts.push(cells[b]); a = b;
+  }
+  if (Math.hypot(tx - pts[pts.length - 1][0], ty - pts[pts.length - 1][1]) < 0.2) pts.push([tx, ty]);
+  return pts;
+}
+function randomTarget(c) {
+  for (let k = 0; k < 30; k++) {
+    const a = rnd(0, Math.PI * 2), r = rnd(1.0, 4.0), x = c.x + Math.cos(a) * r, y = c.y + Math.sin(a) * r;
+    const [i, j] = cellOf(x, y);
+    if (isFree(i, j)) { const p = findPath(c.x, c.y, x, y); if (p && p.length > 1) return p; }
+  }
+  return null;
+}
+
+function setupCats(root) {
+  buildGrid();
+  for (const def of meta.cats || []) {
+    const sit = root.getObjectByName(`Cat_${def.id}_sit`), walk = root.getObjectByName(`Cat_${def.id}_walk`);
+    if (!sit || !walk) continue;
+    const legs = [0, 1, 2, 3].map((i) => root.getObjectByName(`Cat_${def.id}_leg${i}`));
+    const tail = root.getObjectByName(`Cat_${def.id}_tail`);
+    const voice = new THREE.PositionalAudio(listener);
+    voice.setRefDistance(1.0); voice.setRolloffFactor(1.6); voice.setVolume(0.9);
+    const ear = new THREE.Object3D(); ear.add(voice); scene.add(ear);
+    const [px, py, pz, ph] = def.perch;
+    const c = { ...def, sit, walk, legs, tail, voice, ear, buffers: [], x: px, y: py, z: pz,
+      heading: (ph * Math.PI) / 180, state: 'perched', timer: def.id === 'tabby' ? rnd(4, 7) : rnd(10, 16),
+      path: null, step: 0, phase: 0, walks: 0, meowTimer: rnd(12, 30) };
+    walk.visible = false;
+    walk.traverse((o) => { o.userData.cat = c; }); sit.traverse((o) => { o.userData.cat = c; });
+    const pitches = def.id === 'ginger' ? [1.12, 1.22] : [0.92, 1.0];
+    Promise.all(pitches.map(makeMeow)).then((b) => { c.buffers = b; }).catch(() => {});
+    cats.push(c);
+  }
+}
+function meow(c) {
+  if (!soundOn || !c.buffers.length || c.voice.isPlaying) return;
+  c.voice.setBuffer(c.buffers[Math.floor(Math.random() * c.buffers.length)]);
+  c.voice.setPlaybackRate(rnd(0.94, 1.06));
+  try { c.voice.play(); } catch (_) {}
+}
+function showCat(c, pose) {   // 'sit' shows the sitting (or loaf) model, 'walk' the rig with moving legs
+  c.sit.visible = pose === 'sit'; c.walk.visible = pose === 'walk';
+  const node = pose === 'sit' ? c.sit : c.walk;
+  node.position.copy(P3(c.x, c.y, c.z)); node.rotation.set(0, c.heading, 0);
+}
+function hop(c, to, next) { c.state = 'hop'; c.hopFrom = [c.x, c.y, c.z]; c.hopTo = to; c.hopT = 0; c.after = next; }
+
+function updateCats(dt) {
+  for (const c of cats) {
+    c.ear.position.copy(P3(c.x, c.y, c.z + 0.3));
+    if ((c.meowTimer -= dt) < 0) {   // now and then, when you're around
+      if (Math.hypot(me.x - c.x, me.y - c.y) < 7) meow(c);
+      c.meowTimer = rnd(18, 45);
+    }
+    if (c.state === 'perched' || c.state === 'rest') {
+      showCat(c, 'sit');
+      if ((c.timer -= dt) > 0) continue;
+      if (c.state === 'perched') { const [fx, fy] = c.floor; c.heading = Math.atan2(fy - c.y, fx - c.x); hop(c, [fx, fy, 0], 'wander'); continue; }
+      if (c.walks >= 3 && Math.random() < 0.45) {   // head home and hop back up
+        const p = findPath(c.x, c.y, ...c.floor);
+        if (p) { c.path = p; c.step = 1; c.state = 'walk'; c.goHome = true; continue; }
+      }
+      c.state = 'wander';
+    }
+    if (c.state === 'wander') {
+      const p = randomTarget(c);
+      if (p) { c.path = p; c.step = 1; c.state = 'walk'; c.goHome = false; } else { c.state = 'rest'; c.timer = rnd(2, 4); }
+      continue;
+    }
+    if (c.state === 'hop') {
+      c.hopT = Math.min(1, c.hopT + dt / 0.55);
+      const [ax, ay, az] = c.hopFrom, [bx, by, bz] = c.hopTo, t = c.hopT;
+      c.x = ax + (bx - ax) * t; c.y = ay + (by - ay) * t;
+      c.z = az + (bz - az) * t + Math.sin(Math.PI * t) * 0.28;
+      showCat(c, 'walk');
+      c.legs.forEach((l, i) => l && (l.rotation.z = (i < 2 ? -1 : 1) * 0.5 * Math.sin(Math.PI * t)));
+      if (t >= 1) {
+        if (c.after === 'perch') { c.state = 'perched'; c.heading = (c.perch[3] * Math.PI) / 180; c.timer = rnd(15, 35); c.walks = 0; }
+        else c.state = c.after;
+      }
+      continue;
+    }
+    if (c.state === 'walk') {
+      const [tx, ty] = c.path[c.step], dx = tx - c.x, dy = ty - c.y, dist = Math.hypot(dx, dy);
+      let diff = Math.atan2(dy, dx) - c.heading;
+      diff = Math.atan2(Math.sin(diff), Math.cos(diff));
+      c.heading += Math.sign(diff) * Math.min(Math.abs(diff), 5 * dt);
+      const v = CAT_SPEED * dt * Math.max(0, Math.cos(diff)) ** 2;   // turn on the spot when facing away
+      if (dist <= Math.max(v, 0.05)) { c.x = tx; c.y = ty; c.step++; } else { c.x += Math.cos(c.heading) * v; c.y += Math.sin(c.heading) * v; }
+      c.phase += (v / STRIDE) * Math.PI * 2;
+      showCat(c, 'walk');
+      c.walk.position.y += 0.006 * Math.abs(Math.sin(c.phase));
+      c.legs.forEach((l, i) => l && (l.rotation.z = 0.45 * Math.sin(c.phase + (i === 0 || i === 3 ? 0 : Math.PI))));
+      if (c.tail) c.tail.rotation.y = 0.35 * Math.sin(c.phase * 0.5);
+      if (c.step >= c.path.length) {
+        c.legs.forEach((l) => l && (l.rotation.z = 0));
+        c.walks++;
+        if (c.goHome) { const [x, y, z] = c.perch; c.heading = Math.atan2(y - c.y, x - c.x); hop(c, [x, y, z], 'perch'); }
+        else { c.state = 'rest'; c.timer = rnd(3, 9); if (Math.random() < 0.5 && Math.hypot(me.x - c.x, me.y - c.y) < 7) meow(c); }
+      }
+    }
+  }
+}
+function petCat(ndcX, ndcY) {   // click / tap a cat: it meows
+  if (!modelRoot || !cats.length) return false;
+  ray.setFromCamera(new THREE.Vector2(ndcX, ndcY), camera);
+  const h = ray.intersectObjects(cats.flatMap((c) => [c.sit, c.walk]).filter((o) => o.visible), true)[0];
+  if (!h) return false;
+  let o = h.object; while (o && !o.userData.cat) o = o.parent;
+  if (o) meow(o.userData.cat);
+  return !!o;
+}
 
 // ---------- wall paint (vertex colours on the wall meshes, one wall of one room at a time)
 let painting = false, paintHex = PAINTS[2][1];
@@ -711,7 +931,7 @@ function ndcOf(e) {
   return [((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1];
 }
 canvas.addEventListener('pointerdown', (e) => {
-  press = { x: e.clientX, y: e.clientY, t: performance.now() };
+  press = { x: e.clientX, y: e.clientY, t: performance.now(), locked: document.pointerLockElement === canvas };
   if (e.pointerType === 'mouse') {
     drag = { x: e.clientX, y: e.clientY };
     if (painting && document.pointerLockElement === canvas) { paintAt(0, 0); return; }   // paint at the crosshair
@@ -749,7 +969,9 @@ canvas.addEventListener('pointermove', (e) => {
 const endPointer = (e) => {
   const tap = press && e.type === 'pointerup' && Math.hypot(e.clientX - press.x, e.clientY - press.y) < 6 &&
               performance.now() - press.t < 400;
+  const wasLocked = press && press.locked;
   press = null;
+  if (!painting && tap) petCat(...(wasLocked ? [0, 0] : ndcOf(e)));
   if (painting && tap && document.pointerLockElement !== canvas && !(joy && e.pointerId === joy.id)) paintAt(...ndcOf(e));
   if (e.pointerType === 'mouse') { drag = null; return; }
   if (joy && e.pointerId === joy.id) { joy = null; joyEl.hidden = true; }
@@ -796,6 +1018,7 @@ function loop(now) {
     }
   }
   updateDoorPrompt();
+  updateCats(dt);
   camera.position.copy(P3(me.x, me.y, EYE));
   camera.rotation.set(me.pitch, me.yaw - Math.PI / 2, 0);
   updateRoomLabel();
@@ -805,6 +1028,6 @@ function loop(now) {
 }
 
 // test hook, only with #debug in the URL
-if (location.hash === '#debug') window.__wt = { get doors() { return doors; }, me, toggleDoor, paintAt, setPainting, goTo, hit };
+if (location.hash === '#debug') window.__wt = { get doors() { return doors; }, get cats() { return cats.map((c) => ({ id: c.id, state: c.state, x: +c.x.toFixed(2), y: +c.y.toFixed(2), z: +c.z.toFixed(2), sounds: c.buffers.length })); }, me, toggleDoor, paintAt, setPainting, goTo, hit, scene, renderer, petCat, step: (s) => { for (let k = 0; k < s * 20; k++) updateCats(0.05); return true; } };
 boot();
 </script>
