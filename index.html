@@ -279,9 +279,11 @@ const ROOMS = [   // spawn key, label, plan-rect names that count as this room, 
   ['balcony', 'Balcony', ['Balcony'], 'hall'],
 ];
 const PAINTS = [   // name, hex
-  ['Warm white', '#ece7dd'], ['Greige', '#cfc6b8'], ['Sage', '#a8b09a'], ['Warm sage', '#b3b293'], ['Cool sage', '#a2b2a8'],
-  ['Green Tea (Flexa)', '#c8c4b3'], ['Eucalyptus', '#7f9183'], ['Deep green', '#3f5546'],
-  ['Dusty blue', '#8fa3b0'], ['Blush', '#ddb8aa'], ['Terracotta', '#c0775a'], ['Ochre', '#c9a055'], ['Charcoal', '#4a4a48'],
+  ['Warm white', '#ece7dd'], ['Greige', '#cfc6b8'], ['Sage', '#a8b09a'], ['Warm sage', '#b3b293'],   // [3] = default brush
+  // real paints closest to Warm sage (third-party hex values, approximate) and the darker steps of the same family
+  ['Vert de Terre (Farrow & Ball 234)', '#b7baa4'], ['Boringdon Green (Little Greene 295)', '#a8af96'],
+  ['Green Tea (Flexa)', '#c8c4b3'], ['Lichen (Farrow & Ball 19)', '#a1a189'], ['Treron (Farrow & Ball 292)', '#8b8a77'],
+  ['Eucalyptus', '#7f9183'], ['Dusty blue', '#8fa3b0'], ['Blush', '#ddb8aa'], ['Terracotta', '#c0775a'], ['Charcoal', '#4a4a48'],
 ];
 const PAINTABLE = /^Wall (warm white|sage)$/;
 const TILES = {
