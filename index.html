@@ -263,7 +263,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
 
 const ROOMS = [   // spawn key, label, plan-rect names that count as this room, plan tint
-  ['hall', 'Hall', ['Hall', 'Corridor', 'Storage'], 'hall'],
+  ['hall', 'Hall', ['Hall', 'Hall west', 'Corridor', 'Storage'], 'hall'],
   ['living', 'Living room', ['Living'], 'day'],
   ['kitchen', 'Kitchen', ['Kitchen'], 'day'],
   ['bathroom', 'Bathroom', ['Bathroom'], 'wet'],
@@ -1231,10 +1231,17 @@ function petCat(ndcX, ndcY) {   // click / tap a cat to pet it
 // ---------- the doorbell on the landing: a real ding-dong at the button, and the cats come to the front door to see who it is
 // ("Doorbell-classic-dingdong.ogg", Wikimedia Commons, public domain; trimmed to 3 s, mono, levelled)
 const BELL = { id: 'bell', label: 'doorbell', bell: true };
-const FRONT_DOOR = [4.68, 2.34];                                  // middle of the front door (plan metres)
-const BELL_SPOTS = [[4.5, 2.85], [4.9, 2.95], [4.7, 3.25]];       // just inside it, in the hall
+let FRONT_DOOR = [4.68, 2.34];                                    // middle of the front door (plan metres; set from meta)
+const BELL_OFFSETS = [[-0.18, 0.51], [0.22, 0.61], [0.02, 0.91]];  // where the cats wait, just inside it in the hall
+let BELL_SPOTS = BELL_OFFSETS.map(([dx, dy]) => [FRONT_DOOR[0] + dx, FRONT_DOOR[1] + dy]);
 let bellNode = null, bellPos = null, bellVoice = null, bellBuf = null;
 function setupBell(root) {
+  const fd = (meta.doors || []).find((d) => d.id === 'front');
+  if (fd) {
+    const a = (fd.closed * Math.PI) / 180;
+    FRONT_DOOR = [fd.hinge[0] + (Math.cos(a) * fd.length) / 2, fd.hinge[1] + (Math.sin(a) * fd.length) / 2];
+    BELL_SPOTS = BELL_OFFSETS.map(([dx, dy]) => [FRONT_DOOR[0] + dx, FRONT_DOOR[1] + dy]);
+  }
   bellNode = root.getObjectByName('Door_bell');
   if (!bellNode) return;
   bellNode.updateWorldMatrix(true, false);
@@ -1629,9 +1636,11 @@ function updateRoomLabel() {
   $('room-name').textContent = r ? r[1] : 'Doorway';
   if (r) {
     const rects = meta.rooms.filter((m) => r[2].includes(m.name));
-    const main = rects[0].rect;
-    const area = rects.reduce((s, m) => s + (m.rect[2] - m.rect[0]) * (m.rect[3] - m.rect[1]), 0);
-    $('room-dims').textContent = `≈ ${(main[2] - main[0]).toFixed(2)} × ${(main[3] - main[1]).toFixed(2)} m · ${area.toFixed(1)} m²`;
+    // inside dimensions from the measured plan (meta size); older models only have the floor rects, which run under walls
+    const dims = (m) => m.size || [m.rect[2] - m.rect[0], m.rect[3] - m.rect[1]];
+    const [w, l] = dims(rects[0]);
+    const area = rects.reduce((s, m) => s + dims(m)[0] * dims(m)[1], 0);
+    $('room-dims').textContent = `${w.toFixed(2)} × ${l.toFixed(2)} m · ${area.toFixed(1)} m²`;
   } else $('room-dims').textContent = '';
   document.querySelectorAll('#rooms button').forEach((b) => b.setAttribute('aria-current', b.dataset.key === key));
 }
@@ -1700,7 +1709,8 @@ plan.addEventListener('click', (e) => {
 // ---------- move furniture (M): drag pieces across the floor, R or the wheel turns them 15°; saved like the paint.
 // Each piece is one Move_<id> node (origin = centre of its footprint on the floor) with its footprint in meta.movables;
 // it is left out of the baked light, so it is lit in real time and gets a soft contact shadow on the floor.
-const LAYOUT_KEY = 'liendenhof-walkthrough-layout', TURN = Math.PI / 12;
+const LAYOUT_KEY = 'liendenhof-walkthrough-layout-v2',   // v2: walls moved to the measured plan; old layouts dropped
+  TURN = Math.PI / 12;
 const movables = [];   // {id, label, node, origin, box, parts, h, x, y, rot, mats}
 let staticCols = null, staticCatCols = null, moveMode = false, picked = null, dragPiece = null, shadowTexture = null;
 function contactShadowTex() {   // soft dark rounded rectangle on transparent, stretched under each piece
