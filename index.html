@@ -201,7 +201,7 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f
           <div class="paints" id="paints" role="group" aria-labelledby="paint-title"></div>
           <span class="paint-name" id="paint-name"></span>
           <div class="paint-row">
-            <label for="paint-custom">Any colour <input type="color" id="paint-custom" value="#a8b09a"></label>
+            <label for="paint-custom">Any colour <input type="color" id="paint-custom" value="#b3b293"></label>
             <button type="button" class="linkish" id="paint-reset">Reset walls</button>
           </div>
         </div>
@@ -1380,7 +1380,7 @@ canvas.addEventListener('contextmenu', (e) => {
 });
 
 // ---------- wall paint (vertex colours on the wall meshes, one wall of one room at a time)
-let painting = false, paintHex = PAINTS[2][1];
+let painting = false, paintHex = PAINTS[3][1];   // Warm sage, the sofa wall's colour
 const ray = new THREE.Raycaster();
 const PAINT_KEY = 'liendenhof-walkthrough-paint';
 function prepPaint(o) {
@@ -1466,7 +1466,7 @@ function buildPaintUI() {
     b.addEventListener('click', () => pickPaint(hex, name));
     $('paints').append(b);
   }
-  $('paint-name').textContent = PAINTS[2][0];
+  $('paint-name').textContent = PAINTS[3][0];
   $('paint-toggle').addEventListener('click', () => setPainting(!painting));
   $('paint-custom').addEventListener('input', (e) => pickPaint(e.target.value));
   $('paint-reset').addEventListener('click', () => {
