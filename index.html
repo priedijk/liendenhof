@@ -258,6 +258,7 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f
 <script type="module">
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
 
@@ -365,6 +366,9 @@ function bakedShader(s) {   // lightmap only: drop direct lights, ambient and th
     .replace('#include <common>', '#include <common>\nvarying vec3 vLampW;')
     .replace('#include <project_vertex>', '#include <project_vertex>\n\tvLampW = ( modelMatrix * vec4( transformed, 1.0 ) ).xyz;');
   s.fragmentShader = s.fragmentShader
+    // skip the real-time light loops: their result is dropped below anyway, and they ran for every baked pixel
+    .replace('#include <lights_fragment_begin>',
+      THREE.ShaderChunk.lights_fragment_begin.replace(/NUM_(POINT|SPOT|DIR|RECT_AREA)_LIGHTS > 0/g, '0 > 0'))
     .replace('#include <lightmap_pars_fragment>',
       '#include <lightmap_pars_fragment>\nuniform sampler2D lightMap2;\nuniform float lmMix;\nuniform float lmScale2;\n' +
       'uniform vec3 lampPos[ 2 ];\nuniform float lampPow[ 2 ];\nuniform vec4 lampBox[ 2 ];\nvarying vec3 vLampW;')
@@ -529,7 +533,7 @@ async function boot() {
     // hiding createImageBitmap for that moment makes embedded textures load as images
     const gltf = await new Promise((ok, fail) => {
       const cib = window.createImageBitmap; window.createImageBitmap = undefined;
-      try { new GLTFLoader().parse(buf.buffer, './', ok, fail); } finally { window.createImageBitmap = cib; }
+      try { new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).parse(buf.buffer, './', ok, fail); } finally { window.createImageBitmap = cib; }
     });
     $('load-msg').textContent = 'Loading the lighting…';
     setupModel(gltf.scene, await loadLightmaps());
