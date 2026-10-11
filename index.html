@@ -1726,7 +1726,8 @@ async function setBalcony(key) {
     const d = (m.userData.brick ||= { map: m.map, color: m.color.clone() });
     // painted brick: the same bond in white masonry paint, so the bricks and joints still read (flat white if missing)
     m.map = white ? paint : d.map;
-    m.color.copy(white ? (paint ? new THREE.Color(1, 1, 1) : new THREE.Color(BALC_OPTS.white.color)) : d.color);
+    // (the painted texture is the bake's matt albedo, sRGB 0.80; lift it to the bright white the flat option showed)
+    m.color.copy(white ? (paint ? new THREE.Color().setScalar(1.38) : new THREE.Color(BALC_OPTS.white.color)) : d.color);
     m.needsUpdate = true;
   }
   for (const m of bakedMats) m.lightMap = (tex && tex[m.userData.lmName]) || m.userData.lmDay;
