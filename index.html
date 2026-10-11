@@ -313,7 +313,8 @@ const FLOOR_OPTS = {   // the wood floor in the living room, bedroom, study and 
 const FLOOR_KEY = 'liendenhof-walkthrough-floor';
 const SAND_OPTS = {   // tiles on the bathroom/toilet floor and the bathroom walls outside the shower ("sand_tiles")
   bremen:    { name: 'Bremen Ivoor · 100 × 100', color: '#e3dbcf' },
-  bremen_60: { name: 'Bremen Ivoor · 60 × 120', color: '#e3dbcf' },
+  bremen_60_a: { name: 'Bremen Ivoor · 60 × 120 · walls 120 + 120 + 20 strip at the ceiling', color: '#e3dbcf', layout: true },
+  bremen_60_b: { name: 'Bremen Ivoor · 60 × 120 · walls 70 / 120 / 70', color: '#e3dbcf', layout: true },
   petra:     { name: 'Petra Ivoor · 80 × 80', color: '#ddd4c4' },
 };
 const SAND_KEY = 'liendenhof-walkthrough-bathtile', TILE_KEY = 'liendenhof-walkthrough-tile', FIN_KEY = 'liendenhof-walkthrough-finishes';
@@ -679,7 +680,7 @@ function setupModel(root, lightmaps = {}) {
       o.material.color.setScalar(1.25);
     }
     if (n === 'Oak floor') floorMats.push(o.material);
-    if (n === 'Floor tile') sandMats.push(o.material);
+    if (n === 'Floor tile') { sandMats.push(o.material); sandMeshes.push(o); }
     if (n === 'Bath wall tile') {
       // the render's glossy clear-coat mirrors the bright environment in real time and washes the green out
       // glossy but not mirror-like: a normal map (wavy handmade glaze, rounded edges) gives the moving glints
@@ -1592,11 +1593,67 @@ function updateFinishSum() {
 }
 
 // ---------- bathroom 60 x 60 tiles (floor + walls outside the shower, material "Floor tile"); the lightmap stays
-const sandCache = {}; let sandBase = null;
+const sandCache = {}, sandMeshes = [], sandGroups = { floor: [], wx: [], wz: [] }; let sandBase = null;
+// Laid-out options (Bremen 60 x 120 as planned): the floor and the two wall directions each get their own texture
+// transform, aligned to the bathroom's corners. Walls: 3 standing tiles per 1.8 m, rows from the ceiling (2.6 m) down;
+// floor (the dry part; the shower floor is its own sloped field): 3 x 60 along the room in line with the wall
+// columns, a full 120 from the south wall and a 60 cut to the north, so the shower edge falls on a joint.
+const LAYOUT_FLOOR = 'textures/floor_tile_bremen_60_f.jpg', LAYOUT_WALL_M = [1.8, 2.6], LAYOUT_FLOOR_M = [1.8, 1.8];
+function splitSand() {   // one draw group per surface direction, each with its own (lightmap-sharing) material
+  for (const o of sandMeshes) {
+    const g = o.geometry, pos = g.attributes.position, nTri = (g.index ? g.index.count : pos.count) / 3;
+    const idx = g.index ? g.index.array : Array.from({ length: pos.count }, (_, i) => i);
+    const buckets = [[], [], []], v = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()];
+    o.updateWorldMatrix(true, false);
+    for (let t = 0; t < nTri; t++) {
+      for (let k = 0; k < 3; k++) v[k].fromBufferAttribute(pos, idx[t * 3 + k]).applyMatrix4(o.matrixWorld);
+      const n = new THREE.Vector3().subVectors(v[1], v[0]).cross(new THREE.Vector3().subVectors(v[2], v[0]));
+      const a = [Math.abs(n.x), Math.abs(n.y), Math.abs(n.z)];
+      buckets[a[1] >= a[0] && a[1] >= a[2] ? 0 : a[0] >= a[2] ? 1 : 2].push(idx[t * 3], idx[t * 3 + 1], idx[t * 3 + 2]);
+    }
+    const all = buckets[0].concat(buckets[1], buckets[2]);
+    g.setIndex(all); g.clearGroups();
+    g.addGroup(0, buckets[0].length, 0); g.addGroup(buckets[0].length, buckets[1].length, 1);
+    g.addGroup(buckets[0].length + buckets[1].length, buckets[2].length, 2);
+    const m0 = o.material, mats = [m0];
+    for (let i = 1; i < 3; i++) {
+      const m = m0.clone(); m.onBeforeCompile = m0.onBeforeCompile; m.userData = m0.userData;   // same lightmap uniforms
+      if (m0.userData.lmDay) bakedMats.push(m);
+      mats.push(m);
+    }
+    o.material = mats;
+    sandGroups.floor.push(mats[0]); sandGroups.wx.push(mats[1]); sandGroups.wz.push(mats[2]);
+  }
+  sandMats.length = 0; sandMats.push(...sandGroups.floor, ...sandGroups.wx, ...sandGroups.wz);
+}
+function layoutTex(url, mats, rep, off) {   // shared image, one transform per surface direction
+  const apply = (base) => {
+    const t = base.clone(); t.repeat.set(rep[0], rep[1]); t.offset.set(off[0], off[1]); t.rotation = 0; t.center.set(0, 0);
+    t.needsUpdate = true;
+    for (const m of mats) { m.map = t; m.needsUpdate = true; }
+  };
+  if (sandCache[url]) return apply(sandCache[url]);
+  new THREE.TextureLoader().load(url, (tex) => {
+    tex.flipY = false; tex.colorSpace = THREE.SRGBColorSpace; tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    sandCache[url] = tex; apply(tex);
+  });
+}
+function setSandLayout(key) {
+  const su = (() => { const r = meta.sand_rep?.[sandBase.key]; return Array.isArray(r) ? r : [r || 2, r || 2]; })();   // metres per UV unit in the model
+  const bath = meta.rooms.find((r) => r.name === 'Bathroom').rect, [x0, y0, x1] = bath;
+  const [WU, WV] = LAYOUT_WALL_M, [FU, FV] = LAYOUT_FLOOR_M;
+  // walls: u = metres along the wall / su, v = 1 - height / su (glTF flips v); rows counted down from the ceiling
+  const wv = [su[1] / WV, 1 - su[1] / WV];
+  layoutTex(meta.sand_tiles[key], sandGroups.wz, [su[0] / WU, wv[0]], [-x0 / WU, wv[1]]);   // walls along x: columns from the door wall
+  layoutTex(meta.sand_tiles[key], sandGroups.wx, [su[0] / WU, wv[0]], [-y0 / WU, wv[1]]);   // walls along y: columns from the south wall
+  layoutTex(LAYOUT_FLOOR, sandGroups.floor, [su[0] / FU, su[1] / FV], [-x0 / FU, (y0 - su[1]) / FV]);
+}
 function buildSandUI() {
   if (!meta.sand_tiles || !sandMats.length) return;
   const def = meta.sand_default || 'ivory';
   sandBase = { key: def, repeat: sandMats[0].map.repeat.clone() };
+  splitSand();
   for (const [key, t] of Object.entries(SAND_OPTS)) {
     if (!meta.sand_tiles[key]) continue;
     const b = chipButton(t.name, t.color, 'tile grid60');
@@ -1613,6 +1670,7 @@ function setSand(key) {
   document.querySelectorAll('#sand-chips button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.sand === key));
   $('sand-name').textContent = SAND_OPTS[key].name;
   try { localStorage.setItem(SAND_KEY, key); } catch (_) {}
+  if (SAND_OPTS[key].layout) { setSandLayout(key); updateFinishSum(); return; }
   // tile sizes differ (100, 80, 60 cm): scale the default's texture repeat by the metres each texture covers
   const m2 = (k) => { const r = meta.sand_rep?.[k]; return Array.isArray(r) ? r : [r, r]; };   // (u, v) metres per texture repeat
   const rep = meta.sand_rep && sandBase ? new THREE.Vector2(sandBase.repeat.x * m2(sandBase.key)[0] / m2(key)[0], sandBase.repeat.y * m2(sandBase.key)[1] / m2(key)[1]) : null;
