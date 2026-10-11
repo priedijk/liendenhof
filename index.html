@@ -100,6 +100,11 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f
 .tile-pick { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .tile-dot { width: 24px; height: 24px; flex: none; border-radius: 5px; border: 1px solid var(--line);
   background-image: repeating-linear-gradient(0deg, rgba(255,255,255,.55) 0 1px, transparent 1px 6px); }
+.tile-dot.vert { background-image: repeating-linear-gradient(90deg, rgba(255,255,255,.55) 0 1px, transparent 1px 6px); }
+.seg { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.seg button { appearance: none; border: 0; background: transparent; color: var(--ink); font: 500 12px/1.2 var(--f-ui); padding: 5px 6px; cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
 .tile-pick select { flex: 1; min-width: 0; font: 500 13px/1.2 var(--f-ui); color: var(--ink); background: var(--panel-solid);
   border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; cursor: pointer; }
 .paint-name { font-size: 12.5px; color: var(--ink); min-height: 1.2em; }
@@ -213,6 +218,7 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f
         <div class="fin-sec tiles">
           <span class="label" id="tiles-title">Shower &amp; toilet tiles</span>
           <div class="tile-pick"><span class="tile-dot" id="tiles-dot"></span><select id="tiles-select" aria-labelledby="tiles-title"></select></div>
+          <div class="seg" id="tile-orient" role="group" aria-label="Tile direction"><button type="button" data-o="h">Horizontal stack</button><button type="button" data-o="v">Vertical stack</button></div>
           <span class="paint-name" id="tiles-name"></span>
         </div>
         <div class="fin-sec" id="sand-panel" hidden>
@@ -311,6 +317,7 @@ const FLOOR_OPTS = {   // the wood floor in the living room, bedroom, study and 
 const FLOOR_KEY = 'liendenhof-walkthrough-floor';
 const SAND_OPTS = {   // tiles on the bathroom/toilet floor and the bathroom walls outside the shower ("sand_tiles")
   bremen:    { name: 'Bremen Ivoor · 100 × 100', color: '#e3dbcf' },
+  bremen_60: { name: 'Bremen Ivoor · 60 × 120', color: '#e3dbcf' },
   petra:     { name: 'Petra Ivoor · 80 × 80', color: '#ddd4c4' },
   ivory:     { name: 'Ivory · 60 × 60', color: '#eee6d5' },
   sand:      { name: 'Sand · 60 × 60', color: '#d6c5a8' },
@@ -687,7 +694,6 @@ function setupModel(root, lightmaps = {}) {
       o.material.roughness = 0.3;
       if ('clearcoat' in o.material) o.material.clearcoat = 0;
       o.material.envMapIntensity = 0.3;
-      loadTileNormal(o.material);
     }
     for (const k of ['map', 'normalMap']) if (o.material[k]) o.material[k].anisotropy = renderer.capabilities.getMaxAnisotropy();   // floors and tiles at grazing angles
     if (/Glass/.test(n)) { o.material.depthWrite = false; o.renderOrder = 2; }
@@ -1546,9 +1552,10 @@ function buildUI() {
   sel.addEventListener('change', () => { setTile(sel.value); sel.blur(); canvas.focus({ preventScroll: true }); });
   if (!tileMat || !sel.options.length) { document.querySelector('.fin-sec.tiles').hidden = true; return; }
   const def = meta.tile_default || 'rio_turquoise';
-  let saved = def;
-  try { saved = localStorage.getItem(TILE_KEY) || saved; } catch (_) {}
-  setTile(meta.tiles?.[saved] && TILES[saved] ? saved : def);
+  let saved = def, orient = 'h';
+  try { saved = localStorage.getItem(TILE_KEY) || saved; orient = localStorage.getItem(ORIENT_KEY) === 'v' ? 'v' : 'h'; } catch (_) {}
+  document.querySelectorAll('#tile-orient button').forEach((b) => b.addEventListener('click', () => { setTile(tileKey, b.dataset.o); canvas.focus({ preventScroll: true }); }));
+  setTile(meta.tiles?.[saved] && TILES[saved] ? saved : def, orient);
 }
 function chipButton(name, color, cls = '') {   // one round/square swatch in a Finishes row
   const b = document.createElement('button');
@@ -1614,7 +1621,8 @@ function setSand(key) {
   $('sand-name').textContent = SAND_OPTS[key].name;
   try { localStorage.setItem(SAND_KEY, key); } catch (_) {}
   // tile sizes differ (100, 80, 60 cm): scale the default's texture repeat by the metres each texture covers
-  const rep = meta.sand_rep && sandBase ? sandBase.repeat.clone().multiplyScalar(meta.sand_rep[sandBase.key] / meta.sand_rep[key]) : null;
+  const m2 = (k) => { const r = meta.sand_rep?.[k]; return Array.isArray(r) ? r : [r, r]; };   // (u, v) metres per texture repeat
+  const rep = meta.sand_rep && sandBase ? new THREE.Vector2(sandBase.repeat.x * m2(sandBase.key)[0] / m2(key)[0], sandBase.repeat.y * m2(sandBase.key)[1] / m2(key)[1]) : null;
   swapTexture(meta.sand_tiles[key], sandMats, sandCache, key, rep);
   updateFinishSum();
 }
@@ -1699,21 +1707,40 @@ async function setBalcony(key) {
 }
 
 const tileCache = {};
-function loadTileNormal(m) {   // same tile layout for every colour, so one normal map serves them all
-  new THREE.TextureLoader().load('textures/wall_tile_normal.jpg', (tex) => {
-    const o = m.map;
+// Rio 6 x 25 cm in stack bond, laid horizontal or vertical: textures/wall_tile_<colour>_<h|v>.jpg cover 1.5 x 1.5 m
+const TILE_TEX_M = 1.5, ORIENT_KEY = 'liendenhof-walkthrough-tile-orient';
+let tileKey = null, tileOrient = 'h', tileBase = null, tileRep = null;
+const normalCache = {};
+function tileRepeat() {   // the exported material maps one repeat to meta.bath_tile_uv metres (older models: 1.00 x 0.72)
+  if (!tileRep) {
+    const uv = meta.bath_tile_uv || [1.0, 0.72];
+    tileBase = tileBase || tileMat.map.repeat.clone();
+    tileRep = new THREE.Vector2(tileBase.x * uv[0] / TILE_TEX_M, tileBase.y * uv[1] / TILE_TEX_M);
+  }
+  return tileRep;
+}
+function setTileNormal(o) {   // same layout for every colour, so one normal map per direction serves them all
+  const apply = (tex) => { tileMat.normalMap = tex; tileMat.normalScale.set(0.8, 0.8); tileMat.needsUpdate = true; };
+  if (normalCache[o]) return apply(normalCache[o]);
+  new THREE.TextureLoader().load(`textures/wall_tile_normal_${o}.jpg`, (tex) => {
+    const m = tileMat.map;
     tex.flipY = false; tex.colorSpace = THREE.NoColorSpace; tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    if (o) { tex.offset.copy(o.offset); tex.repeat.copy(o.repeat); tex.rotation = o.rotation; tex.center.copy(o.center); tex.channel = o.channel; }
+    if (m) { tex.offset.copy(m.offset); tex.rotation = m.rotation; tex.center.copy(m.center); tex.channel = m.channel; }
+    tex.repeat.copy(tileRepeat());
     tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
-    m.normalMap = tex; m.normalScale.set(0.8, 0.8); m.needsUpdate = true;
+    normalCache[o] = tex; if (tileOrient === o) apply(tex);
   }, undefined, () => {});
 }
-function setTile(key) {
+function setTile(key, orient = tileOrient) {
+  tileKey = key; tileOrient = orient;
   $('tiles-select').value = key;
   $('tiles-dot').style.backgroundColor = TILES[key].color;
-  $('tiles-name').textContent = `${TILES[key].name} · ${TILES[key].note}`;
-  try { localStorage.setItem(TILE_KEY, key); } catch (_) {}
-  swapTexture(meta.tiles[key], [tileMat], tileCache, key);
+  $('tiles-dot').classList.toggle('vert', orient === 'v');
+  document.querySelectorAll('#tile-orient button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.o === orient));
+  $('tiles-name').textContent = `${TILES[key].name} · ${TILES[key].note} · stacked ${orient === 'v' ? 'vertical' : 'horizontal'}`;
+  try { localStorage.setItem(TILE_KEY, key); localStorage.setItem(ORIENT_KEY, orient); } catch (_) {}
+  swapTexture(`textures/wall_tile_${key}_${orient}.jpg`, [tileMat], tileCache, `${key}_${orient}`, tileRepeat());
+  setTileNormal(orient);
   updateFinishSum();
 }
 
