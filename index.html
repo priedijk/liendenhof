@@ -1596,8 +1596,8 @@ const sandCache = {}, sandMeshes = [], sandGroups = { floor: [], wx: [], wz: [] 
 // Laid-out options (Bremen 60 x 120 as planned): the floor and the two wall directions each get their own texture
 // transform, aligned to the bathroom's corners. Walls: 3 standing tiles per 1.8 m, rows from the ceiling (2.6 m) down;
 // floor (the dry part; the shower floor is its own sloped field): 3 x 60 along the room in line with the wall
-// columns, a full 120 from the south wall and a 60 cut to the north, so the shower edge falls on a joint.
-const LAYOUT_FLOOR = 'textures/floor_tile_bremen_60_f.jpg', LAYOUT_WALL_M = [1.8, 2.6], LAYOUT_FLOOR_M = [1.8, 1.8];
+// columns, and across it two equal 91 cm cuts with one joint down the middle; the shower edge falls on a joint.
+const LAYOUT_FLOOR = 'textures/floor_tile_bremen_60_f.jpg', LAYOUT_WALL_M = [1.8, 2.6], LAYOUT_FLOOR_M = [1.8, 1.82];
 function splitSand() {   // one draw group per surface direction, each with its own (lightmap-sharing) material
   for (const o of sandMeshes) {
     const g = o.geometry, pos = g.attributes.position, nTri = (g.index ? g.index.count : pos.count) / 3;
