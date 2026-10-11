@@ -97,6 +97,11 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f
 .paint-row label { display: flex; align-items: center; gap: 8px; cursor: pointer; }
 .paint-row input[type="color"] { width: 30px; height: 24px; padding: 0; border: 1px solid var(--line); border-radius: 5px; background: none; cursor: pointer; }
 .linkish { appearance: none; border: 0; background: none; color: var(--muted); font: 500 12.5px var(--f-ui); cursor: pointer; text-decoration: underline; padding: 2px; }
+.tile-pick { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.tile-dot { width: 24px; height: 24px; flex: none; border-radius: 5px; border: 1px solid var(--line);
+  background-image: repeating-linear-gradient(0deg, rgba(255,255,255,.55) 0 1px, transparent 1px 6px); }
+.tile-pick select { flex: 1; min-width: 0; font: 500 13px/1.2 var(--f-ui); color: var(--ink); background: var(--panel-solid);
+  border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; cursor: pointer; }
 .paint-name { font-size: 12.5px; color: var(--ink); min-height: 1.2em; }
 /* the Finishes panel: one card with a collapsible body of small sections */
 .finishes { display: grid; grid-template-columns: minmax(0, 1fr); min-width: 0; }
@@ -207,7 +212,7 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f
         </div>
         <div class="fin-sec tiles">
           <span class="label" id="tiles-title">Shower &amp; toilet tiles</span>
-          <div class="paints" id="swatches" role="group" aria-labelledby="tiles-title"></div>
+          <div class="tile-pick"><span class="tile-dot" id="tiles-dot"></span><select id="tiles-select" aria-labelledby="tiles-title"></select></div>
           <span class="paint-name" id="tiles-name"></span>
         </div>
         <div class="fin-sec" id="sand-panel" hidden>
@@ -279,17 +284,22 @@ const ROOMS = [   // spawn key, label, plan-rect names that count as this room, 
   ['balcony', 'Balcony', ['Balcony'], 'hall'],
 ];
 const PAINTS = [   // name, hex
-  ['Warm white', '#ece7dd'], ['Greige', '#cfc6b8'], ['Sage', '#a8b09a'], ['Warm sage', '#b3b293'],   // [3] = default brush
+  ['White', '#f2f2f0'], ['Warm white', '#ece7dd'], ['Greige', '#cfc6b8'], ['Sage', '#a8b09a'], ['Warm sage', '#b3b293'],   // BRUSH = default brush
   // real paints closest to Warm sage (third-party hex values, approximate) and the darker steps of the same family
   ['Vert de Terre (Farrow & Ball 234)', '#b7baa4'], ['Boringdon Green (Little Greene 295)', '#a8af96'],
   ['Green Tea (Flexa)', '#c8c4b3'], ['Lichen (Farrow & Ball 19)', '#a1a189'], ['Treron (Farrow & Ball 292)', '#8b8a77'],
   ['Eucalyptus', '#7f9183'], ['Dusty blue', '#8fa3b0'], ['Blush', '#ddb8aa'], ['Terracotta', '#c0775a'], ['Charcoal', '#4a4a48'],
 ];
-const PAINTABLE = /^Wall (warm white|sage)$/;
-const TILES = {
-  rio_turquoise: { name: 'Rio Turquoise', note: 'lively teal, glazed', color: '#3d8a85' },
-  lume_green:    { name: 'Lume Green',    note: 'soft sage, calm',     color: '#71896a' },
-  oxford_forest: { name: 'Oxford Forest', note: 'deep forest green',   color: '#24402f' },
+const BRUSH = PAINTS.findIndex((p) => p[0] === 'Warm sage');
+const PAINTABLE = /^Wall /;   // Wall white / warm white / sage / sage dark / olive / greige (the baked paint plan)
+const TILES = {   // shower + toilet tiles: Ceramic Connection Rio, 6 x 25 cm glazed (apartment.json "tiles")
+  rio_turquoise: { name: 'Rio Turquoise', note: 'muted green', color: '#597d6b' },
+  rio_bone:      { name: 'Rio Bone',      note: 'bone white',  color: '#e0d9cc' },
+  rio_greige:    { name: 'Rio Greige',    note: 'grey-beige',  color: '#c2bab0' },
+  rio_blue:      { name: 'Rio Blue',      note: 'grey teal',   color: '#5c8082' },
+  rio_emerald:   { name: 'Rio Emerald',   note: 'soft aqua',   color: '#80adab' },
+  rio_clay:      { name: 'Rio Clay',      note: 'terracotta',  color: '#996142' },
+  lume_green:    { name: 'Lume Green',    note: 'soft sage',   color: '#61795e' },
 };
 const FLOOR_OPTS = {   // the wood floor in the living room, bedroom, study and hall (apartment.json "floors")
   greyed_oak:    { name: 'Greyed oak · long planks', color: '#94806d' },
@@ -299,7 +309,9 @@ const FLOOR_OPTS = {   // the wood floor in the living room, bedroom, study and 
   concrete_tile: { name: 'Concrete-look tiles · 100 × 100', color: '#b3b1ad' },
 };
 const FLOOR_KEY = 'liendenhof-walkthrough-floor';
-const SAND_OPTS = {   // 60 x 60 tiles on the bathroom/toilet floor and the bathroom walls outside the shower ("sand_tiles")
+const SAND_OPTS = {   // tiles on the bathroom/toilet floor and the bathroom walls outside the shower ("sand_tiles")
+  bremen:    { name: 'Bremen Ivoor · 100 × 100', color: '#e3dbcf' },
+  petra:     { name: 'Petra Ivoor · 80 × 80', color: '#ddd4c4' },
   ivory:     { name: 'Ivory · 60 × 60', color: '#eee6d5' },
   sand:      { name: 'Sand · 60 × 60', color: '#d6c5a8' },
   warm_grey: { name: 'Warm grey · 60 × 60', color: '#cdc8bf' },
@@ -1382,9 +1394,9 @@ canvas.addEventListener('contextmenu', (e) => {
 });
 
 // ---------- wall paint (vertex colours on the wall meshes, one wall of one room at a time)
-let painting = false, paintHex = PAINTS[3][1];   // Warm sage, the sofa wall's colour
+let painting = false, paintHex = PAINTS[BRUSH][1];   // Warm sage, the sofa wall's colour
 const ray = new THREE.Raycaster();
-const PAINT_KEY = 'liendenhof-walkthrough-paint';
+const PAINT_KEY = 'liendenhof-walkthrough-paint-v2';   // v2: the paint plan is baked in, earlier test strokes are dropped
 function prepPaint(o) {
   if (o.userData.paint) return o.userData.paint;
   const g = o.geometry, pos = g.attributes.position, n = pos.count;
@@ -1468,7 +1480,7 @@ function buildPaintUI() {
     b.addEventListener('click', () => pickPaint(hex, name));
     $('paints').append(b);
   }
-  $('paint-name').textContent = PAINTS[3][0];
+  $('paint-name').textContent = PAINTS[BRUSH][0];
   $('paint-toggle').addEventListener('click', () => setPainting(!painting));
   $('paint-custom').addEventListener('input', (e) => pickPaint(e.target.value));
   $('paint-reset').addEventListener('click', () => {
@@ -1523,18 +1535,18 @@ function buildUI() {
     b.addEventListener('click', () => goTo(key));
     nav.append(b);
   });
-  const sw = $('swatches');
+  const sel = $('tiles-select');
   for (const [key, t] of Object.entries(TILES)) {
     if (!meta.tiles?.[key]) continue;
-    const b = chipButton(t.name, t.color, 'tile brick');
-    b.dataset.tile = key;
-    b.addEventListener('click', () => setTile(key));
-    sw.append(b);
+    sel.append(new Option(`${t.name} · ${t.note}`, key));
   }
-  if (!tileMat) { document.querySelector('.fin-sec.tiles').hidden = true; return; }
-  let saved = 'rio_turquoise';
+  sel.addEventListener('change', () => { setTile(sel.value); sel.blur(); canvas.focus({ preventScroll: true }); });
+  if (!tileMat || !sel.options.length) { document.querySelector('.fin-sec.tiles').hidden = true; return; }
+  const def = meta.tile_default || 'rio_turquoise';
+  tileCache[def] = tileMat.map;   // the exported texture is the default tile
+  let saved = def;
   try { saved = localStorage.getItem(TILE_KEY) || saved; } catch (_) {}
-  setTile(meta.tiles?.[saved] ? saved : 'rio_turquoise');
+  setTile(meta.tiles?.[saved] && TILES[saved] ? saved : def);
 }
 function chipButton(name, color, cls = '') {   // one round/square swatch in a Finishes row
   const b = document.createElement('button');
@@ -1543,7 +1555,7 @@ function chipButton(name, color, cls = '') {   // one round/square swatch in a F
   return b;
 }
 // a swapped texture must keep the exported one's wrapping and glTF texture transform (KHR_texture_transform)
-function swapTexture(url, mats, cache, key) {
+function swapTexture(url, mats, cache, key, repeat = null) {
   const apply = (tex) => { for (const m of mats) { m.map = tex; m.needsUpdate = true; } };
   if (cache[key]) return apply(cache[key]);
   new THREE.TextureLoader().load(url, (tex) => {
@@ -1551,6 +1563,7 @@ function swapTexture(url, mats, cache, key) {
     tex.flipY = false; tex.colorSpace = THREE.SRGBColorSpace;
     tex.wrapS = o ? o.wrapS : THREE.RepeatWrapping; tex.wrapT = o ? o.wrapT : THREE.RepeatWrapping;
     if (o) { tex.offset.copy(o.offset); tex.repeat.copy(o.repeat); tex.rotation = o.rotation; tex.center.copy(o.center); tex.channel = o.channel; }
+    if (repeat) tex.repeat.copy(repeat);
     tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
     cache[key] = tex; apply(tex);
   });
@@ -1577,10 +1590,12 @@ function updateFinishSum() {
 }
 
 // ---------- bathroom 60 x 60 tiles (floor + walls outside the shower, material "Floor tile"); the lightmap stays
-const sandCache = {};
+const sandCache = {}; let sandBase = null;
 function buildSandUI() {
   if (!meta.sand_tiles || !sandMats.length) return;
-  sandCache.ivory = sandMats[0].map;   // the exported texture is the default (ivory)
+  const def = meta.sand_default || 'ivory';
+  sandCache[def] = sandMats[0].map;   // the exported texture is the default
+  sandBase = { key: def, repeat: sandMats[0].map.repeat.clone() };
   for (const [key, t] of Object.entries(SAND_OPTS)) {
     if (!meta.sand_tiles[key]) continue;
     const b = chipButton(t.name, t.color, 'tile grid60');
@@ -1589,15 +1604,17 @@ function buildSandUI() {
     $('sand-chips').append(b);
   }
   $('sand-panel').hidden = false;
-  let saved = 'ivory';
+  let saved = def;
   try { saved = localStorage.getItem(SAND_KEY) || saved; } catch (_) {}
-  setSand(meta.sand_tiles[saved] ? saved : 'ivory');
+  setSand(meta.sand_tiles[saved] && SAND_OPTS[saved] ? saved : def);
 }
 function setSand(key) {
   document.querySelectorAll('#sand-chips button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.sand === key));
   $('sand-name').textContent = SAND_OPTS[key].name;
   try { localStorage.setItem(SAND_KEY, key); } catch (_) {}
-  swapTexture(meta.sand_tiles[key], sandMats, sandCache, key);
+  // tile sizes differ (100, 80, 60 cm): scale the default's texture repeat by the metres each texture covers
+  const rep = meta.sand_rep && sandBase ? sandBase.repeat.clone().multiplyScalar(meta.sand_rep[sandBase.key] / meta.sand_rep[key]) : null;
+  swapTexture(meta.sand_tiles[key], sandMats, sandCache, key, rep);
   updateFinishSum();
 }
 
@@ -1682,10 +1699,10 @@ async function setBalcony(key) {
 
 const tileCache = {};
 function setTile(key) {
-  document.querySelectorAll('#swatches button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.tile === key));
+  $('tiles-select').value = key;
+  $('tiles-dot').style.backgroundColor = TILES[key].color;
   $('tiles-name').textContent = `${TILES[key].name} · ${TILES[key].note}`;
   try { localStorage.setItem(TILE_KEY, key); } catch (_) {}
-  if (!tileCache.rio_turquoise) tileCache.rio_turquoise = tileMat.map;   // the exported texture is Rio Turquoise
   swapTexture(meta.tiles[key], [tileMat], tileCache, key);
   updateFinishSum();
 }
@@ -1960,7 +1977,7 @@ canvas.addEventListener('pointerup', endDrag, true);
 canvas.addEventListener('pointercancel', endDrag, true);
 canvas.addEventListener('wheel', (e) => { if (moveMode && picked) { e.preventDefault(); turnPicked(e.deltaY > 0 ? 1 : -1); } }, { passive: false });
 addEventListener('keydown', (e) => {
-  if (e.target.matches && e.target.matches('input')) return;
+  if (e.target.matches && e.target.matches('input, select')) return;
   if (e.code === 'KeyM' && !e.repeat && movables.length) setMoveMode(!moveMode);
   if (e.code === 'KeyR' && moveMode && !e.repeat) turnPicked(e.shiftKey ? -1 : 1);
   if (e.code === 'Escape' && moveMode) setMoveMode(false);
@@ -1973,7 +1990,7 @@ $('move-reset').addEventListener('click', () => { resetLayout(); canvas.focus({ 
 const keys = new Set();
 addEventListener('keydown', (e) => {
   if (e.target.closest && e.target.closest('button') && (e.key === ' ' || e.key === 'Enter')) return;
-  if (e.target.matches && e.target.matches('input')) return;
+  if (e.target.matches && e.target.matches('input, select')) return;
   keys.add(e.code);
   const n = parseInt(e.key, 10);
   if (n >= 1 && n <= ROOMS.length) goTo(ROOMS[n - 1][0]);
