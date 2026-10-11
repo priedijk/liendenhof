@@ -682,11 +682,14 @@ function setupModel(root, lightmaps = {}) {
     if (n === 'Floor tile') sandMats.push(o.material);
     if (n === 'Bath wall tile') {
       // the render's glossy clear-coat mirrors the bright environment in real time and washes the green out
+      // glossy but not mirror-like: a normal map (wavy handmade glaze, rounded edges) gives the moving glints
       tileMat = o.material;
-      o.material.roughness = 0.55;
+      o.material.roughness = 0.3;
       if ('clearcoat' in o.material) o.material.clearcoat = 0;
-      o.material.envMapIntensity = 0.12;
+      o.material.envMapIntensity = 0.3;
+      loadTileNormal(o.material);
     }
+    for (const k of ['map', 'normalMap']) if (o.material[k]) o.material[k].anisotropy = renderer.capabilities.getMaxAnisotropy();   // floors and tiles at grazing angles
     if (/Glass/.test(n)) { o.material.depthWrite = false; o.renderOrder = 2; }
     if (PAINTABLE.test(n)) paintMeshes.push(o);
   });
@@ -1543,7 +1546,6 @@ function buildUI() {
   sel.addEventListener('change', () => { setTile(sel.value); sel.blur(); canvas.focus({ preventScroll: true }); });
   if (!tileMat || !sel.options.length) { document.querySelector('.fin-sec.tiles').hidden = true; return; }
   const def = meta.tile_default || 'rio_turquoise';
-  tileCache[def] = tileMat.map;   // the exported texture is the default tile
   let saved = def;
   try { saved = localStorage.getItem(TILE_KEY) || saved; } catch (_) {}
   setTile(meta.tiles?.[saved] && TILES[saved] ? saved : def);
@@ -1594,7 +1596,6 @@ const sandCache = {}; let sandBase = null;
 function buildSandUI() {
   if (!meta.sand_tiles || !sandMats.length) return;
   const def = meta.sand_default || 'ivory';
-  sandCache[def] = sandMats[0].map;   // the exported texture is the default
   sandBase = { key: def, repeat: sandMats[0].map.repeat.clone() };
   for (const [key, t] of Object.entries(SAND_OPTS)) {
     if (!meta.sand_tiles[key]) continue;
@@ -1698,6 +1699,15 @@ async function setBalcony(key) {
 }
 
 const tileCache = {};
+function loadTileNormal(m) {   // same tile layout for every colour, so one normal map serves them all
+  new THREE.TextureLoader().load('textures/wall_tile_normal.jpg', (tex) => {
+    const o = m.map;
+    tex.flipY = false; tex.colorSpace = THREE.NoColorSpace; tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    if (o) { tex.offset.copy(o.offset); tex.repeat.copy(o.repeat); tex.rotation = o.rotation; tex.center.copy(o.center); tex.channel = o.channel; }
+    tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    m.normalMap = tex; m.normalScale.set(0.8, 0.8); m.needsUpdate = true;
+  }, undefined, () => {});
+}
 function setTile(key) {
   $('tiles-select').value = key;
   $('tiles-dot').style.backgroundColor = TILES[key].color;
