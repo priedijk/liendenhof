@@ -312,7 +312,6 @@ const FLOOR_OPTS = {   // the wood floor in the living room, bedroom, study and 
 };
 const FLOOR_KEY = 'liendenhof-walkthrough-floor';
 const SAND_OPTS = {   // tiles on the bathroom/toilet floor and the bathroom walls outside the shower ("sand_tiles")
-  bremen:    { name: 'Bremen Ivoor · 100 × 100', color: '#e3dbcf' },
   bremen_60_a: { name: 'Bremen Ivoor · 60 × 120 · walls 120 + 120 + 20 strip at the ceiling', color: '#e3dbcf', layout: true },
   bremen_60_b: { name: 'Bremen Ivoor · 60 × 120 · walls 70 / 120 / 70', color: '#e3dbcf', layout: true },
   petra:     { name: 'Petra Ivoor · 80 × 80', color: '#ddd4c4' },
@@ -1662,9 +1661,11 @@ function buildSandUI() {
     $('sand-chips').append(b);
   }
   $('sand-panel').hidden = false;
-  let saved = def;
+  // the model's own default (Bremen 100 x 100) is no longer offered: start on the symmetric 60 x 120 layout
+  const start = SAND_OPTS[def] && meta.sand_tiles[def] ? def : 'bremen_60_b';
+  let saved = start;
   try { saved = localStorage.getItem(SAND_KEY) || saved; } catch (_) {}
-  setSand(meta.sand_tiles[saved] && SAND_OPTS[saved] ? saved : def);
+  setSand(meta.sand_tiles[saved] && SAND_OPTS[saved] ? saved : start);
 }
 function setSand(key) {
   document.querySelectorAll('#sand-chips button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.sand === key));
