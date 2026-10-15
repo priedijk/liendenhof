@@ -56,6 +56,9 @@ h2 { font-weight: 700; font-size: 22px; margin: 0; text-wrap: balance; }
 .wet { display: grid; gap: 14px; grid-template-columns: 1fr; }
 @media (min-width: 860px) { .wet { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 0.75fr); align-items: start; } }
 .wet figure, .room { margin: 0; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.ledge { display: grid; gap: 14px; grid-template-columns: 1fr; }
+@media (min-width: 700px) { .ledge { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.ledge figure { margin: 0; display: grid; gap: 8px; align-content: start; min-width: 0; }
 .swatches { display: flex; flex-wrap: wrap; gap: 8px; }
 .swatch { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px 8px 10px; border-radius: 999px;
   border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: 500 14px/1 var(--f-display); cursor: pointer; }
@@ -103,7 +106,7 @@ figcaption { display: grid; gap: 2px; }
     <h1>Liendenhof Renders</h1>
     <p class="lede">Second pass of the renovated apartment, rendered in Blender (Cycles) from the floor plan. It has your kitchen, bathroom and floor changes, a study instead of the second bedroom, and new lighting and cameras throughout.</p>
     <div class="meta">
-      <span>Rendered <b>11 Oct 2026</b></span><span>Ceiling <b>2.60 m</b></span><span>Frames <b>1600 × 1200</b></span><span>Cycles <b>384 samples</b></span>
+      <span>Rendered <b>15 Oct 2026</b></span><span>Ceiling <b>2.60 m</b></span><span>Frames <b>1600 × 1200</b></span><span>Cycles <b>384 samples</b></span>
       <a class="walk" href="../">Walk through it in 3D →</a>
     </div>
   </header>
@@ -131,11 +134,22 @@ figcaption { display: grid; gap: 2px; }
         <figcaption><span class="room-name">Toilet</span><span class="dims">1.78 × 0.92 m · same tile</span></figcaption>
       </figure>
     </div>
+    <div class="ledge">
+      <figure>
+        <button class="shot" data-src="renders/shower_tiled.jpg" data-cap="Douche · muurtje, betegelde bovenkant · Rio Turquoise"><img src="renders/shower_tiled.jpg" alt="Shower close-up: a 1.02 m ledge wall across the back wall, tiled all over in the green Rio so it reads as one block, bottles on top" loading="lazy"></button>
+        <figcaption><span class="room-name">Shower ledge <span>· tiled top</span></span><span class="dims">1.02 m high · 15 cm deep · Rio over the top · Rio Turquoise</span></figcaption>
+      </figure>
+      <figure>
+        <button class="shot" data-src="renders/shower_stone.jpg" data-cap="Douche · muurtje, stenen afdekplaat · Rio Turquoise"><img src="renders/shower_stone.jpg" alt="Shower close-up: the same ledge wall with a light stone sill on top" loading="lazy"></button>
+        <figcaption><span class="room-name">Shower ledge <span>· stone sill</span></span><span class="dims">same wall, 2 cm light stone top</span></figcaption>
+      </figure>
+    </div>
     <div class="notes">
-      <p>The toilet uses the same tile as the shower, so the two always match. The glass panel now stands on the sink side, and the rain head, hand shower and thermostat are on the mirror wall. You walk into the shower from the radiator side.</p>
+      <p>The toilet uses the same tile as the shower, so the two always match. The glass panel now stands on the sink side, and the rain head, hand shower and thermostat are on the mirror wall. You walk into the shower from the radiator side. Across the back of the shower a solid ledge wall, 1.02 m high and 15 cm deep, replaces the niche: four rows of tiles, so its joints run on from the wall behind it, and the drain sits right in front of it.</p>
       <dl class="spec">
         <dt>Wall tile</dt><dd>Ceramic Connection Rio, glazed 6 × 25 cm, stacked vertically with grout in the tile colour, in shower and toilet. Shortlist: Turquoise, Blue, Clay</dd>
         <dt>Floor + walls</dt><dd>Bremen Ivoor 60 × 120 cm (R10): walls standing, 70 / 120 / 70 from floor to ceiling, three tiles per wall; the dry floor 3 × 60 by two equal 91 cm cuts with one joint down the middle; the shower floor its own sloped field to the linear drain; the toilet floor one tile across (3 tiles). The walk-through also has 120 + 120 + 20 and Petra Ivoor 80 × 80</dd>
+        <dt>Shower ledge</dt><dd>Solid wall over the full back wall, 1.02 m × 15 cm deep. Top: the Rio wrapped over (one block, the pick so far) or a light stone sill. Both in the walk-through</dd>
         <dt>South wall</dt><dd>Washer column in the corner by the door, towel radiator next to it</dd>
       </dl>
     </div>
@@ -178,6 +192,7 @@ figcaption { display: grid; gap: 2px; }
     <div>
       <h3>Changed in this round</h3>
       <ul>
+        <li>A tiled ledge wall across the back of the shower instead of the niche: 1.02 m high, 15 cm deep, with the linear drain in front of it. Two tops to compare, the Rio wrapped over or a light stone sill (also a switch in the walk-through).</li>
         <li>Two Rotterdam line-art prints (50 × 70, black frames) over the sofa on the Warm sage wall: the Erasmusbrug on the left, the Euromast on the right, centred on one line 1.42 m up.</li>
         <li>Bathroom tiles laid as planned: Bremen Ivoor 60 × 120 standing on the walls (70 / 120 / 70), the floor in two equal 91 cm cuts with one centre joint, the toilet floor in 3 tiles.</li>
         <li>The white balcony option is now painted brick: the bond and joints stay visible under the paint.</li>
@@ -199,7 +214,7 @@ figcaption { display: grid; gap: 2px; }
         <ul>
           <li>Look at a door and press <b>E</b> to open it. Ring the doorbell from the landing.</li>
           <li>Press <b>P</b> or use the paint panel, then click a wall to repaint it.</li>
-          <li>The Finishes panel switches paint, tiles (colour and horizontal/vertical stack) and floor. Press <b>L</b> for evening, <b>M</b> to move furniture.</li>
+          <li>The Finishes panel switches paint, tiles (colour and horizontal/vertical stack), the shower ledge top and floor. Press <b>L</b> for evening, <b>M</b> to move furniture.</li>
           <li>Click a cat to pet it.</li>
         </ul>
       </div>
