@@ -1786,7 +1786,7 @@ function setTile(key, orient = tileOrient) {
 
 // shower ledge (1.02 m, across the 1.8 m back wall): a sill of the floor tile on top (Bremen Ivoor, two ~90 cm
 // pieces, one joint in the middle; the joint is in the texture) or the Rio wrapped over the top (one green block)
-const LEDGE_OPTS = { sill: 'Floor-tile sill · Bremen Ivoor, two pieces, one joint in line with the floor's', tiled: 'Tiled top · the Rio wraps over, one green block' };
+const LEDGE_OPTS = { sill: 'Floor-tile sill · Bremen Ivoor, two pieces, one joint in line with the floor’s', tiled: 'Tiled top · the Rio wraps over, one green block' };
 function tileTargets() { return ledgeMat && ledgeKey === 'tiled' ? [tileMat, ledgeMat] : [tileMat]; }
 function buildLedgeUI() {
   if (!ledgeMat || !tileMat) return;
