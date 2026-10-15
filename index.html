@@ -999,7 +999,7 @@ function setupCats(root) {
     let home = perches.find((p) => p.id === def.home);
     if (!home) { home = { id: `${def.id}_home`, pos: [px, py, pz], heading: ph, floor: def.floor, poses: ['sit'], taken: null }; perches.push(home); }
     const voice = new THREE.PositionalAudio(listener);
-    voice.setRefDistance(1.0); voice.setRolloffFactor(1.6); voice.setVolume(0.9);
+    voice.setRefDistance(1.0); voice.setRolloffFactor(1.6); voice.setVolume(0.35);   // meow: was 0.9, too loud (user, 2026-10-15)
     const purr = new THREE.PositionalAudio(listener);
     purr.setRefDistance(0.7); purr.setRolloffFactor(2.2); purr.setVolume(0);
     const ear = new THREE.Object3D(); ear.add(voice, purr); scene.add(ear);
