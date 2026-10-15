@@ -217,8 +217,7 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f
         </div>
         <div class="fin-sec tiles">
           <span class="label" id="tiles-title">Shower &amp; toilet tiles</span>
-          <div class="tile-pick"><span class="tile-dot" id="tiles-dot"></span><select id="tiles-select" aria-labelledby="tiles-title"></select></div>
-          <div class="seg" id="tile-orient" role="group" aria-label="Tile direction"><button type="button" data-o="h">Horizontal stack</button><button type="button" data-o="v">Vertical stack</button></div>
+          <div class="tile-pick"><span class="tile-dot vert" id="tiles-dot"></span><select id="tiles-select" aria-labelledby="tiles-title"></select></div>
           <span class="paint-name" id="tiles-name"></span>
         </div>
         <div class="fin-sec" id="ledge-panel" hidden>
@@ -1559,10 +1558,9 @@ function buildUI() {
   sel.addEventListener('change', () => { setTile(sel.value); sel.blur(); canvas.focus({ preventScroll: true }); });
   if (!tileMat || !sel.options.length) { document.querySelector('.fin-sec.tiles').hidden = true; return; }
   const def = meta.tile_default || 'rio_turquoise';
-  let saved = def, orient = 'v';
-  try { saved = localStorage.getItem(TILE_KEY) || saved; orient = localStorage.getItem(ORIENT_KEY) === 'h' ? 'h' : 'v'; } catch (_) {}
-  document.querySelectorAll('#tile-orient button').forEach((b) => b.addEventListener('click', () => { setTile(tileKey, b.dataset.o); canvas.focus({ preventScroll: true }); }));
-  setTile(meta.tiles?.[saved] && TILES[saved] ? saved : def, orient);
+  let saved = def;
+  try { saved = localStorage.getItem(TILE_KEY) || saved; } catch (_) {}
+  setTile(meta.tiles?.[saved] && TILES[saved] ? saved : def);
 }
 function chipButton(name, color, cls = '') {   // one round/square swatch in a Finishes row
   const b = document.createElement('button');
@@ -1747,10 +1745,9 @@ async function setBalcony(key) {
 }
 
 const tileCache = {};
-// Rio 6 x 25 cm in stack bond, laid horizontal or vertical: textures/wall_tile_<colour>_<h|v>.jpg cover 1.5 x 1.5 m
-const TILE_TEX_M = 1.5, ORIENT_KEY = 'liendenhof-walkthrough-tile-orient-v2';   // v2: vertical is the pick (2026-10-11)
-let tileKey = null, tileOrient = 'v', tileBase = null, tileRep = null;
-const normalCache = {};
+// Rio 6 x 25 cm in a vertical stack bond (the only layout since 2026-10-15): textures/wall_tile_<colour>_v.jpg cover 1.5 x 1.5 m
+const TILE_TEX_M = 1.5;
+let tileKey = null, tileBase = null, tileRep = null, tileNormal = null;
 function tileRepeat() {   // the exported material maps one repeat to meta.bath_tile_uv metres (older models: 1.00 x 0.72)
   if (!tileRep) {
     const uv = meta.bath_tile_uv || [1.0, 0.72];
@@ -1759,28 +1756,26 @@ function tileRepeat() {   // the exported material maps one repeat to meta.bath_
   }
   return tileRep;
 }
-function setTileNormal(o) {   // same layout for every colour, so one normal map per direction serves them all
+function setTileNormal() {   // same layout for every colour, so one normal map serves them all
   const apply = (tex) => { for (const m of tileTargets()) { m.normalMap = tex; m.normalScale.set(0.8, 0.8); m.needsUpdate = true; } };
-  if (normalCache[o]) return apply(normalCache[o]);
-  new THREE.TextureLoader().load(`textures/wall_tile_normal_${o}.jpg`, (tex) => {
+  if (tileNormal) return apply(tileNormal);
+  new THREE.TextureLoader().load('textures/wall_tile_normal_v.jpg', (tex) => {
     const m = tileMat.map;
     tex.flipY = false; tex.colorSpace = THREE.NoColorSpace; tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
     if (m) { tex.offset.copy(m.offset); tex.rotation = m.rotation; tex.center.copy(m.center); tex.channel = m.channel; }
     tex.repeat.copy(tileRepeat());
     tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
-    normalCache[o] = tex; if (tileOrient === o) apply(tex);
+    tileNormal = tex; apply(tex);
   }, undefined, () => {});
 }
-function setTile(key, orient = tileOrient) {
-  tileKey = key; tileOrient = orient;
+function setTile(key) {
+  tileKey = key;
   $('tiles-select').value = key;
   $('tiles-dot').style.backgroundColor = TILES[key].color;
-  $('tiles-dot').classList.toggle('vert', orient === 'v');
-  document.querySelectorAll('#tile-orient button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.o === orient));
-  $('tiles-name').textContent = `${TILES[key].name} · ${TILES[key].note} · stacked ${orient === 'v' ? 'vertical' : 'horizontal'}`;
-  try { localStorage.setItem(TILE_KEY, key); localStorage.setItem(ORIENT_KEY, orient); } catch (_) {}
-  swapTexture(`textures/wall_tile_${key}_${orient}.jpg`, tileTargets(), tileCache, `${key}_${orient}`, tileRepeat());
-  setTileNormal(orient);
+  $('tiles-name').textContent = `${TILES[key].name} · ${TILES[key].note} · stacked vertical`;
+  try { localStorage.setItem(TILE_KEY, key); } catch (_) {}
+  swapTexture(`textures/wall_tile_${key}_v.jpg`, tileTargets(), tileCache, `${key}_v`, tileRepeat());
+  setTileNormal();
   updateFinishSum();
 }
 
