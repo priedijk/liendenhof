@@ -1786,7 +1786,7 @@ function setTile(key, orient = tileOrient) {
 
 // shower ledge (1.02 m, across the 1.8 m back wall): a sill of the floor tile on top (Bremen Ivoor, two ~90 cm
 // pieces, one joint in the middle; the joint is in the texture) or the Rio wrapped over the top (one green block)
-const LEDGE_OPTS = { sill: 'Floor-tile sill · Bremen Ivoor, two pieces, one joint in line with the floor’s', tiled: 'Tiled top · the Rio wraps over, one green block' };
+const LEDGE_OPTS = { sill: 'Floor-tile sill · Bremen Ivoor, two pieces, one joint in line with the floor’s', tiled: 'Tiled top · Rio on top, one green block' };
 function tileTargets() { return ledgeMat && ledgeKey === 'tiled' ? [tileMat, ledgeMat] : [tileMat]; }
 function buildLedgeUI() {
   if (!ledgeMat || !tileMat) return;
@@ -1813,7 +1813,7 @@ function loadSill() {   // the jointless Bremen texture, laid with the same UVs 
 async function setLedge(key) {
   ledgeKey = key;
   document.querySelectorAll('#ledge-opts button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.l === key));
-  $('ledge-name').textContent = `${LEDGE_OPTS[key]} · ${Math.round((meta.ledge.height || 1.02) * 100)} cm high`;
+  $('ledge-name').textContent = `${LEDGE_OPTS[key]}${meta.ledge.edge ? ' · metal edge profile' : ''} · ${Math.round((meta.ledge.height || 1.02) * 100)} cm high`;
   try { localStorage.setItem(LEDGE_KEY, key); } catch (_) {}
   if (!ledgeMat) return;
   const d = ledgeMat.userData.tile;
