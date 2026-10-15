@@ -223,7 +223,7 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f
         </div>
         <div class="fin-sec" id="ledge-panel" hidden>
           <span class="label" id="ledge-title">Shower ledge</span>
-          <div class="seg" id="ledge-opts" role="group" aria-labelledby="ledge-title"><button type="button" data-l="tiled">Tiled top</button><button type="button" data-l="stone">Stone sill</button></div>
+          <div class="seg" id="ledge-opts" role="group" aria-labelledby="ledge-title"><button type="button" data-l="sill">Floor-tile sill</button><button type="button" data-l="tiled">Tiled top</button></div>
           <span class="paint-name" id="ledge-name"></span>
         </div>
         <div class="fin-sec" id="sand-panel" hidden>
@@ -522,7 +522,7 @@ new ResizeObserver(resize).observe(canvas);
 
 // ---------- state
 let meta = null, colliders = [], tileMat = null, modelRoot = null, floorMats = [], sandMats = [];
-let ledgeMat = null, stoneMat = null, ledgeKey = 'tiled';   // the shower ledge's switchable 2 cm top (meta.ledge)
+let ledgeMat = null, ledgeKey = 'sill', sillTex;   // the shower ledge's switchable 2 cm top (meta.ledge)
 let doors = [];          // {id, label, hinge, closed, swing, length, node, angle, target}
 let paintMeshes = [];    // wall meshes that take vertex-colour paint
 const me = { x: 0, y: 0, yaw: 0, pitch: -0.05 };
@@ -690,12 +690,11 @@ function setupModel(root, lightmaps = {}) {
     }
     if (n === 'Oak floor') floorMats.push(o.material);
     if (/^Floor tile( wall| toilet)?$/.test(n)) sandMats.push(o.material);
-    if (n === 'Worktop stone') stoneMat = o.material;
     if (n === 'Bath wall tile') {
       // the render's glossy clear-coat mirrors the bright environment in real time and washes the green out
       // glossy but not mirror-like: a normal map (wavy handmade glaze, rounded edges) gives the moving glints
       const ln = meta.ledge && gltfName(meta.ledge.node);
-      if (ln && (o.name === ln || o.parent?.name === ln)) {   // its own material (unbaked meshes share one), so a stone top leaves the walls alone
+      if (ln && (o.name === ln || o.parent?.name === ln)) {   // its own material (unbaked meshes share one), so the sill leaves the walls alone
         if (!lm) o.material = o.material.clone();
         ledgeMat = o.material;
       } else tileMat = o.material;
@@ -1785,33 +1784,47 @@ function setTile(key, orient = tileOrient) {
   updateFinishSum();
 }
 
-// shower ledge (1.02 m, across the back wall): its 2 cm top in the Rio (one green block) or as a light stone sill
-const LEDGE_OPTS = { tiled: 'Tiled top · the Rio wraps over, one green block', stone: 'Stone sill · a light stone top to stand bottles on' };
+// shower ledge (1.02 m, across the back wall): a sill of the floor tile on top (Bremen Ivoor, one piece cut from a
+// 120 cm tile, so no joint along it) or the Rio wrapped over the top (one green block)
+const LEDGE_OPTS = { sill: 'Floor-tile sill · Bremen Ivoor, one piece', tiled: 'Tiled top · the Rio wraps over, one green block' };
 function tileTargets() { return ledgeMat && ledgeKey === 'tiled' ? [tileMat, ledgeMat] : [tileMat]; }
 function buildLedgeUI() {
   if (!ledgeMat || !tileMat) return;
   ledgeMat.roughness = tileMat.roughness; ledgeMat.envMapIntensity = tileMat.envMapIntensity;
   if ('clearcoat' in ledgeMat) ledgeMat.clearcoat = 0;
-  ledgeMat.userData.tile = { roughness: ledgeMat.roughness, color: ledgeMat.color.clone() };
+  ledgeMat.userData.tile = { roughness: ledgeMat.roughness, env: ledgeMat.envMapIntensity, color: ledgeMat.color.clone() };
   document.querySelectorAll('#ledge-opts button').forEach((b) => b.addEventListener('click', () => { setLedge(b.dataset.l); canvas.focus({ preventScroll: true }); }));
   $('ledge-panel').hidden = false;
-  let saved = meta.ledge.default || 'tiled';
+  let saved = meta.ledge.default || 'sill';
   try { saved = localStorage.getItem(LEDGE_KEY) || saved; } catch (_) {}
-  setLedge(LEDGE_OPTS[saved] ? saved : 'tiled');
+  setLedge(LEDGE_OPTS[saved] ? saved : meta.ledge.default || 'sill');
 }
-function setLedge(key) {
+function loadSill() {   // the jointless Bremen texture, laid with the same UVs as the tile it replaces
+  return sillTex ||= new Promise((ok) => {
+    if (!meta.ledge.sill) return ok(null);
+    new THREE.TextureLoader().load(meta.ledge.sill, (t) => {
+      const o = tileMat.map;
+      t.flipY = false; t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping;
+      if (o) { t.offset.copy(o.offset); t.rotation = o.rotation; t.center.copy(o.center); t.channel = o.channel; }
+      t.repeat.copy(tileRepeat()); t.anisotropy = renderer.capabilities.getMaxAnisotropy(); ok(t);
+    }, undefined, () => ok(null));
+  });
+}
+async function setLedge(key) {
   ledgeKey = key;
   document.querySelectorAll('#ledge-opts button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.l === key));
   $('ledge-name').textContent = `${LEDGE_OPTS[key]} · ${Math.round((meta.ledge.height || 1.02) * 100)} cm high`;
   try { localStorage.setItem(LEDGE_KEY, key); } catch (_) {}
   if (!ledgeMat) return;
-  if (key === 'stone') {   // the worktop's stone (its lightmap stays: light only, no colour)
-    ledgeMat.map = stoneMat?.map || null; ledgeMat.normalMap = null;
-    ledgeMat.color.copy(stoneMat ? stoneMat.color : new THREE.Color(0xe2d8c6));
-    ledgeMat.roughness = stoneMat ? stoneMat.roughness : 0.45;
+  const d = ledgeMat.userData.tile;
+  if (key === 'sill') {   // (its lightmap stays: it holds light only, no colour)
+    const t = await loadSill();
+    if (ledgeKey !== key) return;   // switched again while it loaded
+    ledgeMat.map = t; ledgeMat.normalMap = null;
+    ledgeMat.color.set(t ? 0xffffff : 0xe3dbcf); ledgeMat.roughness = 0.6; ledgeMat.envMapIntensity = 0;
   } else {
     ledgeMat.map = tileMat.map; ledgeMat.normalMap = tileMat.normalMap; ledgeMat.normalScale.copy(tileMat.normalScale);
-    ledgeMat.color.copy(ledgeMat.userData.tile.color); ledgeMat.roughness = ledgeMat.userData.tile.roughness;
+    ledgeMat.color.copy(d.color); ledgeMat.roughness = d.roughness; ledgeMat.envMapIntensity = d.env;
   }
   ledgeMat.needsUpdate = true;
 }
