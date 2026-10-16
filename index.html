@@ -308,13 +308,11 @@ const TILES = {   // shower + toilet tiles: Ceramic Connection Rio, 6 x 25 cm gl
   rio_clay:      { name: 'Rio Clay',      note: 'terracotta',  color: '#996142' },
 };
 const FLOOR_OPTS = {   // the wood floor in the living room, bedroom, study and hall (apartment.json "floors")
-  greyed_oak:    { name: 'Greyed oak · long planks', color: '#94806d' },
-  light_oak:     { name: 'Light Scandinavian oak', color: '#c9b394' },
-  smoked_oak:    { name: 'Smoked oak', color: '#5e4a3c' },
-  chevron_oak:   { name: 'Chevron oak', color: 'repeating-linear-gradient(45deg,#9c8064 0 5px,#b39575 5px 10px)' },
-  concrete_tile: { name: 'Concrete-look tiles · 100 × 100', color: '#b3b1ad' },
+  pvc_oak:    { name: 'Greige oak PVC · long planks', color: '#9c8775' },   // the user's example (vloer1)
+  pvc_light:  { name: 'Light oak PVC · long planks', color: '#b8a185' },
+  pvc_greyed: { name: 'Grey-washed oak PVC · long planks', color: '#91877d' },
 };
-const FLOOR_KEY = 'liendenhof-walkthrough-floor';
+const FLOOR_KEY = 'liendenhof-walkthrough-floor-v2';   // v2: the PVC floors (2026-10-16) replaced the oak/tile set
 const SAND_OPTS = {   // tiles on the bathroom/toilet floor and the bathroom walls outside the shower ("sand_tiles")
   bremen_60_b: { name: 'Bremen Ivoor · 60 × 120 · walls 70 / 120 / 70', color: '#e3dbcf',
     layout: { wall: 'textures/floor_tile_bremen_60_b.jpg', floor: 'textures/floor_tile_bremen_60_f.jpg', toilet: 'textures/floor_tile_bremen_60_t.jpg' } },
@@ -1658,7 +1656,8 @@ const floorCache = {};
 function buildFloorUI() {
   const box = $('floor-chips');
   if (!meta.floors || !floorMats.length) return;
-  floorCache.greyed_oak = floorMats[0].map;   // the exported texture is the default floor
+  const def = meta.floor_default || 'pvc_oak';
+  floorCache[def] = floorMats[0].map;   // the exported texture is the default floor
   for (const [key, f] of Object.entries(FLOOR_OPTS)) {
     if (!meta.floors[key]) continue;
     const b = chipButton(f.name, '');
@@ -1668,9 +1667,9 @@ function buildFloorUI() {
     box.append(b);
   }
   $('floor-panel').hidden = false;
-  let saved = 'greyed_oak';
+  let saved = def;
   try { saved = localStorage.getItem(FLOOR_KEY) || saved; } catch (_) {}
-  setFloor(meta.floors[saved] ? saved : 'greyed_oak');
+  setFloor(meta.floors[saved] && FLOOR_OPTS[saved] ? saved : def);
 }
 function setFloor(key) {
   document.querySelectorAll('#floor-chips button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.floor === key));
