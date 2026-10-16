@@ -57,8 +57,9 @@ h2 { font-weight: 700; font-size: 22px; margin: 0; text-wrap: balance; }
 @media (min-width: 860px) { .wet { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 0.75fr); align-items: start; } }
 .wet figure, .room { margin: 0; display: grid; gap: 8px; align-content: start; min-width: 0; }
 .ledge { display: grid; gap: 14px; grid-template-columns: 1fr; }
-@media (min-width: 700px) { .ledge { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 700px) { .ledge { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); align-items: start; } }
 .ledge figure { margin: 0; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.ledge-side { display: grid; gap: 10px; align-content: start; }
 .swatches { display: flex; flex-wrap: wrap; gap: 8px; }
 .swatch { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px 8px 10px; border-radius: 999px;
   border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: 500 14px/1 var(--f-display); cursor: pointer; }
@@ -136,13 +137,16 @@ figcaption { display: grid; gap: 2px; }
     </div>
     <div class="ledge">
       <figure>
-        <button class="shot" data-src="renders/shower_sill.jpg" data-cap="Douche · muurtje met vloertegel als afdekplaat · Rio Turquoise"><img src="renders/shower_sill.jpg" alt="Shower close-up: a 1.00 m ledge wall across the back wall in the green Rio, finished with a slim metal edge profile and topped with a sill of the ivory floor tile in two pieces with one joint in the middle, bottles on top" loading="lazy"></button>
-        <figcaption><span class="room-name">Shower ledge <span>· floor-tile sill</span></span><span class="dims">1.00 m high · 15 cm deep · metal edge profile · Bremen Ivoor top, 2 × ~90 cm</span></figcaption>
+        <button class="shot" data-view="shower" id="ledge-shot" data-cap="Douche · muurtje met vloertegel als afdekplaat"><img data-view="shower" id="ledge-img" src="renders/shower_sill_rio_turquoise.jpg" alt="Shower close-up: a 1.00 m ledge wall across the back wall in the Rio tile, finished with a slim metal edge profile and topped with a sill of the ivory floor tile in two pieces with one joint in the middle, bottles on top" loading="lazy"></button>
+        <figcaption><span class="room-name">Shower ledge <span id="ledge-sub">· floor-tile sill</span></span><span class="dims" id="ledge-dims">1.00 m high · 15 cm deep · metal edge profile · Bremen Ivoor top, 2 × ~90 cm</span></figcaption>
       </figure>
-      <figure>
-        <button class="shot" data-src="renders/shower_tiled.jpg" data-cap="Douche · muurtje, betegelde bovenkant · Rio Turquoise"><img src="renders/shower_tiled.jpg" alt="Shower close-up: the same ledge wall tiled all over in the green Rio, so it reads as one block" loading="lazy"></button>
-        <figcaption><span class="room-name">Shower ledge <span>· tiled top</span></span><span class="dims">the alternative: Rio on top, one green block · same edge profile</span></figcaption>
-      </figure>
+      <div class="ledge-side">
+        <div class="swatches" role="group" aria-label="Ledge top">
+          <button class="swatch" data-ledge="sill" aria-pressed="true">Floor-tile sill</button>
+          <button class="swatch" data-ledge="tiled" aria-pressed="false">Tiled top</button>
+        </div>
+        <p class="hint">The top of the ledge: a sill of the Bremen floor tile (the pick) or the Rio on top as well. Both follow the tile colour above.</p>
+      </div>
     </div>
     <div class="notes">
       <p>The toilet uses the same tile as the shower, so the two always match. The glass panel now stands on the sink side, and the rain head, hand shower and thermostat are on the mirror wall. You walk into the shower from the radiator side. Across the back of the shower a solid ledge wall, 1.00 m high and 15 cm deep, replaces the niche: four full rows of tiles, so its joints run on from the wall behind it, straight into a square metal edge profile (its 10 mm side on top, so from the door you see only a thin line), and the drain sits right in front of it.</p>
@@ -226,15 +230,33 @@ figcaption { display: grid; gap: 2px; }
 
 <script>
 const names = { rio_turquoise: "Rio Turquoise", rio_blue: "Rio Blue", rio_clay: "Rio Clay" };
-let tile = "rio_turquoise";
-const srcFor = (view) => `renders/${view}_${tile}.jpg`;
-document.querySelectorAll(".swatch").forEach(btn => btn.addEventListener("click", () => {
+let tile = "rio_turquoise", ledge = "sill";
+const LEDGE = {   // the shower close-up: rendered per ledge top and per tile colour (renders/shower_<top>_<tile>.jpg)
+  sill:  { sub: "· floor-tile sill", dims: "1.00 m high · 15 cm deep · metal edge profile · Bremen Ivoor top, 2 × ~90 cm",
+           cap: "Douche · muurtje met vloertegel als afdekplaat" },
+  tiled: { sub: "· tiled top", dims: "the option: Rio on top, one block · same edge profile",
+           cap: "Douche · muurtje, betegelde bovenkant" },
+};
+const srcFor = (view) => view === "shower" ? `renders/shower_${ledge}_${tile}.jpg` : `renders/${view}_${tile}.jpg`;
+const refresh = () => document.querySelectorAll("img[data-view]").forEach(img => { img.src = srcFor(img.dataset.view); });
+document.querySelectorAll(".swatch[data-v]").forEach(btn => btn.addEventListener("click", () => {
   tile = btn.dataset.v;
-  document.querySelectorAll(".swatch").forEach(b => b.setAttribute("aria-pressed", String(b === btn)));
-  document.querySelectorAll("img[data-view]").forEach(img => { img.src = srcFor(img.dataset.view); });
+  document.querySelectorAll(".swatch[data-v]").forEach(b => b.setAttribute("aria-pressed", String(b === btn)));
+  refresh();
 }));
-// preload the other tile variants so switching is instant
-for (const v of Object.keys(names)) for (const view of ["bathroom", "bathroom_back", "toilet"]) { const i = new Image(); i.src = `renders/${view}_${v}.jpg`; }
+document.querySelectorAll(".swatch[data-ledge]").forEach(btn => btn.addEventListener("click", () => {
+  ledge = btn.dataset.ledge;
+  document.querySelectorAll(".swatch[data-ledge]").forEach(b => b.setAttribute("aria-pressed", String(b === btn)));
+  document.getElementById("ledge-sub").textContent = LEDGE[ledge].sub;
+  document.getElementById("ledge-dims").textContent = LEDGE[ledge].dims;
+  document.getElementById("ledge-shot").dataset.cap = LEDGE[ledge].cap;
+  refresh();
+}));
+// preload the other variants so switching is instant
+for (const v of Object.keys(names)) {
+  for (const view of ["bathroom", "bathroom_back", "toilet"]) { const i = new Image(); i.src = `renders/${view}_${v}.jpg`; }
+  for (const k of Object.keys(LEDGE)) { const i = new Image(); i.src = `renders/shower_${k}_${v}.jpg`; }
+}
 
 const lb = document.getElementById("lightbox"), lbImg = document.getElementById("lb-img"), lbCap = document.getElementById("lb-cap");
 document.querySelectorAll(".shot").forEach(s => s.addEventListener("click", () => {
