@@ -303,9 +303,9 @@ const PAINTS = [   // name, hex
 const BRUSH = PAINTS.findIndex((p) => p[0] === 'Warm sage');
 const PAINTABLE = /^Wall /;   // Wall white / warm white / sage / sage dark / olive / greige (the baked paint plan)
 const TILES = {   // shower + toilet tiles: Ceramic Connection Rio, 6 x 25 cm glazed (apartment.json "tiles")
-  rio_turquoise: { name: 'Rio Turquoise', note: 'muted green', color: '#597d6b' },
-  rio_blue:      { name: 'Rio Blue',      note: 'grey teal',   color: '#5c8082' },
-  rio_clay:      { name: 'Rio Clay',      note: 'terracotta',  color: '#996142' },
+  rio_turquoise: { name: 'Rio Turquoise', note: 'deep teal green', color: '#45665f' },
+  rio_blue:      { name: 'Rio Blue',      note: 'light blue-grey',   color: '#6b8c91' },
+  rio_clay:      { name: 'Rio Clay',      note: 'terracotta',  color: '#ad5930' },
 };
 const FLOOR_OPTS = {   // the wood floor in the living room, bedroom, study and hall (apartment.json "floors")
   pvc_oak:    { name: 'Greige oak PVC · long planks', color: '#9c8775' },   // the user's example (vloer1)
@@ -314,11 +314,14 @@ const FLOOR_OPTS = {   // the wood floor in the living room, bedroom, study and 
 };
 const FLOOR_KEY = 'liendenhof-walkthrough-floor-v2';   // v2: the PVC floors (2026-10-16) replaced the oak/tile set
 const SAND_OPTS = {   // tiles on the bathroom/toilet floor and the bathroom walls outside the shower ("sand_tiles")
-  bremen_60_b: { name: 'Bremen Ivoor · 60 × 120 · walls 70 / 120 / 70', color: '#e3dbcf',
+  bremen_60_b: { name: 'Bremen Ivoor · 60 × 120 · walls 70 / 120 / 70', color: '#e0dbd1',
     layout: { wall: 'textures/floor_tile_bremen_60_b.jpg', floor: 'textures/floor_tile_bremen_60_f.jpg', toilet: 'textures/floor_tile_bremen_60_t.jpg' } },
-  bremen_60_a: { name: 'Bremen Ivoor · 60 × 120 · walls 120 + 120 + 20 strip at the ceiling', color: '#e3dbcf',
+  bremen_60_a: { name: 'Bremen Ivoor · 60 × 120 · walls 120 + 120 + 20 strip at the ceiling', color: '#e0dbd1',
     layout: { wall: 'textures/floor_tile_bremen_60_a.jpg', floor: 'textures/floor_tile_bremen_60_f.jpg', toilet: 'textures/floor_tile_bremen_60_t.jpg' } },
-  petra:       { name: 'Petra Ivoor · 80 × 80', color: '#ddd4c4', url: 'textures/floor_tile_petra.jpg', m: [1.6, 1.6] },
+  petra:       { name: 'Petra Ivoor · 80 × 80', color: '#ddd6c8', url: 'textures/floor_tile_petra.jpg', m: [1.6, 1.6] },
+  bremen_petra: { name: 'Bremen floor + Petra walls · Bremen Ivoor 60 × 120 floor (10 mm, more grip) · Petra Ivoor 80 × 80 walls (8 mm)', color: '#e0dbd1',
+    layout: { wall: { url: 'textures/floor_tile_petra.jpg', m: [1.6, 1.6] },
+              floor: 'textures/floor_tile_bremen_60_f.jpg', toilet: 'textures/floor_tile_bremen_60_t.jpg' } },
 };
 const SAND_KEY = 'liendenhof-walkthrough-bathtile', TILE_KEY = 'liendenhof-walkthrough-tile', FIN_KEY = 'liendenhof-walkthrough-finishes';
 const LEDGE_KEY = 'liendenhof-walkthrough-ledge';
@@ -1605,7 +1608,8 @@ function updateFinishSum() {
 const sandCache = {};
 // Bremen Ivoor 60 x 120 as planned is built into the model: three materials whose UVs start at the planned corners,
 // one texture repeat = meta.sand_mats[name] metres (floor 1.8 x 1.82, walls 1.8 x 2.6 with the ceiling at the top,
-// toilet floor 1.8 x 1.2). A layout option swaps in its texture per surface; a plain tile scales to its own size.
+// toilet floor 1.8 x 1.2). A layout option swaps in its texture per surface; a plain tile scales to its own size
+// ({url, m} inside a layout does that for one surface, e.g. Petra walls over a Bremen floor).
 const SAND_ROLE = { 'Floor tile': 'floor', 'Floor tile wall': 'wall', 'Floor tile toilet': 'toilet' };
 function sandTex(url, mats, rep) {   // one shared image, one transform per surface
   const apply = (base) => {
@@ -1645,8 +1649,9 @@ function setSand(key) {
   for (const [name, mats] of Object.entries(groups)) {
     const P = meta.sand_mats[name], role = SAND_ROLE[name];
     if (!P || !role) continue;
-    if (opt.layout) sandTex(opt.layout[role], mats, [1, 1]);
-    else sandTex(opt.url, mats, [P[0] / opt.m[0], P[1] / opt.m[1]]);
+    const t = opt.layout ? opt.layout[role] : opt;
+    if (typeof t === 'string') sandTex(t, mats, [1, 1]);
+    else sandTex(t.url, mats, [P[0] / t.m[0], P[1] / t.m[1]]);
   }
   updateFinishSum();
 }
