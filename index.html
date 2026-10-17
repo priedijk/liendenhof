@@ -303,8 +303,8 @@ const PAINTS = [   // name, hex
 const BRUSH = PAINTS.findIndex((p) => p[0] === 'Warm sage');
 const PAINTABLE = /^Wall /;   // Wall white / warm white / sage / sage dark / olive / greige (the baked paint plan)
 const TILES = {   // shower + toilet tiles: Ceramic Connection Rio, 6 x 25 cm glazed (apartment.json "tiles")
-  rio_turquoise: { name: 'Rio Turquoise', note: 'deep teal green', color: '#45665f' },
-  rio_blue:      { name: 'Rio Blue',      note: 'light blue-grey',   color: '#6b8c91' },
+  rio_turquoise: { name: 'Rio Turquoise', note: 'deep teal green', color: '#415c58' },
+  rio_blue:      { name: 'Rio Blue',      note: 'light blue-grey',   color: '#71919c' },
   rio_clay:      { name: 'Rio Clay',      note: 'terracotta',  color: '#ad5930' },
 };
 const FLOOR_OPTS = {   // the wood floor in the living room, bedroom, study and hall (apartment.json "floors")
@@ -318,7 +318,7 @@ const SAND_OPTS = {   // tiles on the bathroom/toilet floor and the bathroom wal
     layout: { wall: 'textures/floor_tile_bremen_60_b.jpg', floor: 'textures/floor_tile_bremen_60_f.jpg', toilet: 'textures/floor_tile_bremen_60_t.jpg' } },
   bremen_60_a: { name: 'Bremen Ivoor · 60 × 120 · walls 120 + 120 + 20 strip at the ceiling', color: '#e0dbd1',
     layout: { wall: 'textures/floor_tile_bremen_60_a.jpg', floor: 'textures/floor_tile_bremen_60_f.jpg', toilet: 'textures/floor_tile_bremen_60_t.jpg' } },
-  petra:       { name: 'Petra Ivoor · 80 × 80', color: '#ddd6c8', url: 'textures/floor_tile_petra.jpg', m: [1.6, 1.6] },
+  petra:       { name: 'Petra Ivoor · 80 × 80', color: '#e0dbd1', url: 'textures/floor_tile_petra.jpg', m: [1.6, 1.6] },
   bremen_petra: { name: 'Bremen floor + Petra walls · Bremen Ivoor 60 × 120 floor (10 mm, more grip) · Petra Ivoor 80 × 80 walls (8 mm)', color: '#e0dbd1',
     layout: { wall: { url: 'textures/floor_tile_petra.jpg', m: [1.6, 1.6] },
               floor: 'textures/floor_tile_bremen_60_f.jpg', toilet: 'textures/floor_tile_bremen_60_t.jpg' } },
