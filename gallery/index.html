@@ -61,6 +61,7 @@ h2 { font-weight: 700; font-size: 22px; margin: 0; text-wrap: balance; }
 .ledge figure { margin: 0; display: grid; gap: 8px; align-content: start; min-width: 0; }
 .ledge-side { display: grid; gap: 10px; align-content: start; }
 .walls { display: grid; gap: 8px; margin: 14px 0 22px; }
+.swatch.na { opacity: 0.4; }   /* a wall tile not made in the chosen size */
 .swatches { display: flex; flex-wrap: wrap; gap: 8px; }
 .swatch { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px 8px 10px; border-radius: 999px;
   border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: 500 14px/1 var(--f-display); cursor: pointer; }
@@ -108,7 +109,7 @@ figcaption { display: grid; gap: 2px; }
     <h1>Liendenhof Renders</h1>
     <p class="lede">Second pass of the renovated apartment, rendered in Blender (Cycles) from the floor plan. It has your kitchen, bathroom and floor changes, a study instead of the second bedroom, and new lighting and cameras throughout.</p>
     <div class="meta">
-      <span>Rendered <b>16–17 Oct 2026</b></span><span>Ceiling <b>2.60 m</b></span><span>Frames <b>1600 × 1200</b></span><span>Cycles <b>384 samples</b></span>
+      <span>Rendered <b>16–18 Oct 2026</b></span><span>Ceiling <b>2.60 m</b></span><span>Frames <b>1600 × 1200</b></span><span>Cycles <b>384 samples</b></span>
       <a class="walk" href="../">Walk through it in 3D →</a>
     </div>
   </header>
@@ -137,11 +138,16 @@ figcaption { display: grid; gap: 2px; }
       </figure>
     </div>
     <div class="walls">
-      <div class="swatches" role="group" aria-label="Bathroom walls">
-        <button class="swatch" data-wall="bremen" aria-pressed="true">Walls: Bremen 60 × 120</button>
-        <button class="swatch" data-wall="petra" aria-pressed="false">Walls: Petra 80 × 80</button>
+      <div class="swatches" role="group" aria-label="Bathroom wall tile">
+        <button class="swatch" data-wall="bremen" aria-pressed="true">Walls: Bremen Ivoor</button>
+        <button class="swatch" data-wall="coralstone" aria-pressed="false">Coralstone Calcite</button>
+        <button class="swatch" data-wall="lomma" aria-pressed="false">Lomma Bone</button>
       </div>
-      <p class="hint">The bathroom walls outside the shower: Bremen Ivoor as planned, or Petra Ivoor 80 × 80 over the Bremen floor (Bremen 10 mm with more grip on the floor, Petra 8 mm on the walls, the same grey-ivory).</p>
+      <div class="swatches" role="group" aria-label="Wall tile size">
+        <button class="swatch" data-size="60x120" aria-pressed="true">60 × 120</button>
+        <button class="swatch" data-size="60x60" aria-pressed="false">60 × 60</button>
+      </div>
+      <p class="hint">The bathroom walls outside the shower, over the Bremen Ivoor 60 × 120 floor: three columns of 60 that carry the floor joints up the wall, and a 20 cm strip at the ceiling (60 × 120: 120 + 120 + 20; 60 × 60: four rows + 20). Bremen (10 mm) is only made in 60 × 120. Coralstone Calcite (8 mm, warm stone with fossil flecks) and Lomma Bone (10 mm, light and calm) are coloured after the shop's pictures, so check them against samples.</p>
     </div>
     <div class="ledge">
       <figure>
@@ -160,7 +166,7 @@ figcaption { display: grid; gap: 2px; }
       <p>The toilet uses the same tile as the shower, so the two always match. The glass panel now stands on the sink side, and the rain head, hand shower and thermostat are on the mirror wall. You walk into the shower from the radiator side. Across the back of the shower a solid ledge wall, 1.00 m high and 15 cm deep, replaces the niche: four full rows of tiles, so its joints run on from the wall behind it, straight into a square metal edge profile (its 10 mm side on top, so from the door you see only a thin line), and the drain sits right in front of it.</p>
       <dl class="spec">
         <dt>Wall tile</dt><dd>Ceramic Connection Rio, glazed 6 × 25 cm, stacked vertically with grout in the tile colour, in shower and toilet. Shortlist: Turquoise, Blue, Clay</dd>
-        <dt>Floor + walls</dt><dd>Bremen Ivoor 60 × 120 cm (R10): walls standing, 70 / 120 / 70 from floor to ceiling, three tiles per wall; the dry floor 3 × 60 by two equal 91 cm cuts with one joint down the middle; the shower floor its own sloped field to the linear drain; the toilet floor one tile across (3 tiles). The walk-through also has 120 + 120 + 20, Petra Ivoor 80 × 80, and Bremen on the floor with Petra on the walls (Bremen 10 mm with more grip, Petra 8 mm, the same grey-ivory; also in the bathroom renders above)</dd>
+        <dt>Floor + walls</dt><dd>Floor: Bremen Ivoor 60 × 120 cm (R10, 10 mm): the dry floor 3 × 60 by two equal 91 cm cuts with one joint down the middle; the shower floor its own sloped field to the linear drain; the toilet floor one tile across (3 tiles). Walls: Bremen standing, 120 + 120 + a 20 cm strip at the ceiling, three tiles per wall; or Coralstone Calcite / Lomma Bone in 60 × 120 or 60 × 60 on the same three columns (the walls switch above, and in the walk-through)</dd>
         <dt>Shower ledge</dt><dd>Solid wall over the full back wall, 1.00 m × 15 cm deep, a square metal edge profile along the front (thick side on top). Top: a sill of the floor tile, Bremen Ivoor, in two ~90 cm pieces with one joint in the middle, in line with the floor's centre joint (the pick). The walk-through also has the Rio wrapped over the top</dd>
         <dt>South wall</dt><dd>Washer column in the corner by the door, towel radiator next to it</dd>
       </dl>
@@ -204,7 +210,8 @@ figcaption { display: grid; gap: 2px; }
     <div>
       <h3>Changed in this round</h3>
       <ul>
-        <li>Tiles: the Rio colours matched to your samples (two photos with and two without lamp light): Turquoise a deep blue-green, Blue a lighter sea blue, Clay terracotta. Bremen on the floor with Petra 80 × 80 on the walls is in the walk-through and the bathroom renders (walls switch).</li>
+        <li>Tiles: the Rio colours matched to your samples (two photos with and two without lamp light): Turquoise a deep blue-green, Blue a lighter sea blue, Clay terracotta.</li>
+        <li>Bathroom walls: Bremen now 120 + 120 + a 20 cm strip at the ceiling (70 / 120 / 70 took a whole tile per 70 cm piece, about 6 m² more), with Coralstone Calcite and Lomma Bone in 60 × 120 or 60 × 60 as options. Petra is out: it is only made in 80 × 80, which needs cuts on every wall.</li>
         <li>Floor: PVC with an oak print after the example (vloer1): 20 cm planks, 1.1–1.9 m long, fine bevelled joints. The walk-through also has it light and grey-washed.</li>
         <li>Underfloor heating: the radiators in the living room, study and bedroom are gone; the bathroom keeps its towel radiator.</li>
         <li>The balcony door in its real place, at the study end of the balcony, light green and sturdier. That leaves 1.69 m of TV wall to the study opening; the sideboard is now 1.45 m.</li>
@@ -239,16 +246,20 @@ figcaption { display: grid; gap: 2px; }
 
 <script>
 const names = { rio_turquoise: "Rio Turquoise", rio_blue: "Rio Blue", rio_clay: "Rio Clay" };
-let tile = "rio_turquoise", ledge = "sill", wall = "bremen";
-const PETRA = ["bathroom", "bathroom_back"];   // also rendered with Petra walls: renders/<view>_petra_<tile>.jpg
+let tile = "rio_turquoise", ledge = "sill", wall = "bremen", size = "60x120";
+// the bathroom views are rendered per wall tile and size: renders/<view>[_<wall>[_60x60]]_<tile>.jpg (Bremen: plain names)
+const WALL_VIEWS = ["bathroom", "bathroom_back"];
+const WALLS = { bremen: { name: "Bremen Ivoor", sizes: ["60x120"] }, coralstone: { name: "Coralstone Calcite", sizes: ["60x120", "60x60"] },
+                lomma: { name: "Lomma Bone", sizes: ["60x120", "60x60"] } };
+const SIZES = { "60x120": "60 × 120", "60x60": "60 × 60" };
 const LEDGE = {   // the shower close-up: rendered per ledge top and per tile colour (renders/shower_<top>_<tile>.jpg)
   sill:  { sub: "· floor-tile sill", dims: "1.00 m high · 15 cm deep · metal edge profile · Bremen Ivoor top, 2 × ~90 cm",
            cap: "Douche · muurtje met vloertegel als afdekplaat" },
   tiled: { sub: "· tiled top", dims: "the option: Rio on top, one block · same edge profile",
            cap: "Douche · muurtje, betegelde bovenkant" },
 };
-const srcFor = (view) => view === "shower" ? `renders/shower_${ledge}_${tile}.jpg`
-  : `renders/${view}${wall === "petra" && PETRA.includes(view) ? "_petra" : ""}_${tile}.jpg`;
+const wallPart = (view) => !WALL_VIEWS.includes(view) || wall === "bremen" ? "" : `_${wall}${size === "60x60" ? "_60x60" : ""}`;
+const srcFor = (view, t = tile) => view === "shower" ? `renders/shower_${ledge}_${t}.jpg` : `renders/${view}${wallPart(view)}_${t}.jpg`;
 const refresh = () => document.querySelectorAll("img[data-view]").forEach(img => { img.src = srcFor(img.dataset.view); });
 document.querySelectorAll(".swatch[data-v]").forEach(btn => btn.addEventListener("click", () => {
   tile = btn.dataset.v;
@@ -263,15 +274,24 @@ document.querySelectorAll(".swatch[data-ledge]").forEach(btn => btn.addEventList
   document.getElementById("ledge-shot").dataset.cap = LEDGE[ledge].cap;
   refresh();
 }));
-document.querySelectorAll(".swatch[data-wall]").forEach(btn => btn.addEventListener("click", () => {
-  wall = btn.dataset.wall;
-  document.querySelectorAll(".swatch[data-wall]").forEach(b => b.setAttribute("aria-pressed", String(b === btn)));
+// keep: which of the two was just chosen; when the tile isn't made in that size the other one gives way
+function setWall(w, s, keep) {
+  if (!WALLS[w].sizes.includes(s)) {
+    if (keep === "size") w = Object.keys(WALLS).find(k => WALLS[k].sizes.includes(s)); else s = WALLS[w].sizes[0];
+  }
+  wall = w; size = s;
+  document.querySelectorAll(".swatch[data-wall]").forEach(b => {
+    b.setAttribute("aria-pressed", String(b.dataset.wall === w)); b.classList.toggle("na", !WALLS[b.dataset.wall].sizes.includes(s));
+  });
+  document.querySelectorAll(".swatch[data-size]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.size === s)));
   refresh();
-}));
+  for (const v of Object.keys(names)) for (const view of WALL_VIEWS) { const i = new Image(); i.src = srcFor(view, v); }
+}
+document.querySelectorAll(".swatch[data-wall]").forEach(btn => btn.addEventListener("click", () => setWall(btn.dataset.wall, size, "wall")));
+document.querySelectorAll(".swatch[data-size]").forEach(btn => btn.addEventListener("click", () => setWall(wall, btn.dataset.size, "size")));
 // preload the other variants so switching is instant
 for (const v of Object.keys(names)) {
   for (const view of ["bathroom", "bathroom_back", "toilet"]) { const i = new Image(); i.src = `renders/${view}_${v}.jpg`; }
-  for (const view of PETRA) { const i = new Image(); i.src = `renders/${view}_petra_${v}.jpg`; }
   for (const k of Object.keys(LEDGE)) { const i = new Image(); i.src = `renders/shower_${k}_${v}.jpg`; }
 }
 
@@ -280,7 +300,7 @@ document.querySelectorAll(".shot").forEach(s => s.addEventListener("click", () =
   const view = s.dataset.view;
   lbImg.src = view ? srcFor(view) : s.dataset.src;
   lbImg.alt = s.querySelector("img").alt;
-  lbCap.textContent = s.dataset.cap + (view ? " · " + names[tile] : "") + (wall === "petra" && PETRA.includes(view) ? " · Petra walls" : "");
+  lbCap.textContent = s.dataset.cap + (view ? " · " + names[tile] : "") + (WALL_VIEWS.includes(view) ? ` · ${WALLS[wall].name} ${SIZES[size]} walls` : "");
   lb.hidden = false;
 }));
 lb.addEventListener("click", () => { lb.hidden = true; });
