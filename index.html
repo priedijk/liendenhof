@@ -470,6 +470,46 @@ function applyDayNight(t) {   // the real-time side: lights for doors, cats and 
   scene.backgroundIntensity = dayBg * (1 - 0.9 * t);
   for (const m of glowMats) m.emissiveIntensity = (m.userData.dayEI ??= m.emissiveIntensity) * (1 + t);
 }
+// ---------- the shower curb is not in the bake (it comes and goes with the shower front), and on real-time light it
+// read grey next to the baked floor. It borrows the floor's light: each corner gets the floor's lightmap UV (TEXCOORD_1)
+// straight below it, so the curb takes the floor's light, day and evening, and reads as the same tile.
+function lightCurb(root, lightmaps) {
+  const floors = [], curbs = [];
+  root.traverse((o) => {
+    if (!o.isMesh) return;
+    if (o.material.name === 'Floor tile' && o.material.lightMap) floors.push(o);
+    if (o.material.name === 'Shower curb') curbs.push(o);
+  });
+  if (!floors.length) return;
+  root.updateMatrixWorld(true);
+  const ray = new THREE.Raycaster(), down = new THREE.Vector3(0, -1, 0), w = new THREE.Vector3(), uvs = [];
+  let lm = null;
+  for (const o of curbs) {
+    const p = o.geometry.attributes.position, uv1 = new Float32Array(p.count * 2);
+    for (let i = 0; i < p.count; i++) {
+      w.fromBufferAttribute(p, i).applyMatrix4(o.matrixWorld);
+      ray.set(w.clone().setY(w.y + 0.5), down);
+      const h = ray.intersectObjects(floors, false)[0];
+      if (!h?.uv1 || (lm && h.object.material.lightMap !== lm)) return;   // off the floor, or on two maps: real-time light
+      lm = h.object.material.lightMap; uv1.set([h.uv1.x, h.uv1.y], i * 2);
+    }
+    uvs.push(uv1);
+  }
+  curbs.forEach((o, i) => {   // the floor's light on the top; the upright faces see less of the room, so a touch darker
+    const g = o.geometry, n = g.attributes.normal, col = new Float32Array(n.count * 3);
+    for (let k = 0; k < n.count; k++) col.fill(w.fromBufferAttribute(n, k).transformDirection(o.matrixWorld).y > 0.5 ? 1 : 0.8, k * 3, k * 3 + 3);
+    g.setAttribute('uv1', new THREE.BufferAttribute(uvs[i], 2)); g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  });
+  const lmName = Object.keys(lightmaps).find((k) => lightmaps[k] === lm);
+  for (const m of new Set(curbs.map((o) => o.material))) {
+    const u = { value: lm };
+    Object.assign(m, { lightMap: lm, lightMapIntensity: Math.PI * meta.lightmaps.range, onBeforeCompile: bakedShader, roughness: 0.6,
+      envMapIntensity: 0, vertexColors: true });
+    Object.assign(m.userData, { lm2: u, lmDay: lm, lmName });
+    lmUniforms.push([lmName, u]); bakedMats.push(m);
+    m.needsUpdate = true;
+  }
+}
 // ---------- mirrors: a planar Reflector on the big front face of each mirror, rendered only when you are near
 const mirrors = [];
 function setupMirrors(root) {
@@ -488,8 +528,8 @@ function setupMirrors(root) {
       tris[key].pts.push(...v.map((w) => w.clone()));
     }
   });
-  const ray = new THREE.Raycaster(), solid = [];
-  root.traverse((o) => { if (o.isMesh && o.material.name !== 'Mirror') solid.push(o); });
+  const ray = new THREE.Raycaster(), solid = [], slabs = [];
+  root.traverse((o) => { if (o.isMesh) (o.material.name === 'Mirror' ? slabs : solid).push(o); });
   for (const t of Object.values(tris)) {
     if (t.area < 0.08) continue;   // only the glass fronts, not the edges of the slab
     const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), t.n);
@@ -500,7 +540,15 @@ function setupMirrors(root) {
     const pos = new Float32Array(t.pts.length * 3);
     t.pts.forEach((w, i) => { const l = w.clone().sub(c).applyQuaternion(inv); pos.set([l.x, l.y, 0], i * 3); });
     const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    const r = new Reflector(geo, { textureWidth: 1024, textureHeight: 1024, color: 0xc8c8c8, clipBias: 0.003 });
+    // clipBias 0: the example's 0.003 lets the clip plane tilt with depth, so the back of the 2 cm slab showed as a
+    // black part of the reflection (one that moved as you walked); the slabs are hidden in its render all the same
+    const r = new Reflector(geo, { textureWidth: 1024, textureHeight: 1024, color: 0xc8c8c8, clipBias: 0 });
+    const draw = r.onBeforeRender;
+    r.onBeforeRender = function (...a) {
+      const was = slabs.map((s) => s.visible);
+      for (const s of slabs) s.visible = false;
+      try { draw.apply(this, a); } finally { slabs.forEach((s, i) => { s.visible = was[i]; }); }
+    };
     r.position.copy(c).addScaledVector(t.n, 0.002); r.quaternion.copy(q);
     r.visible = false; scene.add(r); mirrors.push(r);
   }
@@ -534,7 +582,7 @@ new ResizeObserver(resize).observe(canvas);
 
 // ---------- state
 let meta = null, colliders = [], tileMat = null, modelRoot = null, floorMats = [], wallTileMats = [];
-const bathFloorMats = { floor: [], toilet: [] };   // "Floor tile" (bathroom) and "Floor tile toilet"
+const bathFloorMats = { floor: [], toilet: [], curb: [] };   // "Floor tile" (bathroom), "Floor tile toilet", "Shower curb"
 let ledgeMat = null, ledgeKey = 'sill', sillTex;   // the shower ledge's switchable 2 cm top (meta.ledge)
 let doors = [];          // {id, label, hinge, closed, swing, length, node, angle, target}
 let paintMeshes = [];    // wall meshes that take vertex-colour paint
@@ -706,6 +754,7 @@ function setupModel(root, lightmaps = {}) {
     if (n === 'Floor tile wall') wallTileMats.push(o.material);
     if (n === 'Floor tile') bathFloorMats.floor.push(o.material);
     if (n === 'Floor tile toilet') bathFloorMats.toilet.push(o.material);
+    if (n === 'Shower curb' && !bathFloorMats.curb.includes(o.material)) bathFloorMats.curb.push(o.material);
     if (n === 'Bath wall tile') {
       // the render's glossy clear-coat mirrors the bright environment in real time and washes the green out
       // glossy but not mirror-like: a normal map (wavy handmade glaze, rounded edges) gives the moving glints
@@ -722,6 +771,7 @@ function setupModel(root, lightmaps = {}) {
     if (/Glass/.test(n)) { o.material.depthWrite = false; o.renderOrder = 2; }
     if (PAINTABLE.test(n)) paintMeshes.push(o);
   });
+  if (baked) lightCurb(root, lightmaps);
   scene.add(root);
   modelRoot = root;
   setupMirrors(root);
@@ -1586,11 +1636,12 @@ function chipButton(name, color, cls = '') {   // one round/square swatch in a F
   return b;
 }
 // a swapped texture must keep the exported one's wrapping and glTF texture transform (KHR_texture_transform)
-function swapTexture(url, mats, cache, key, repeat = null) {
-  const apply = (tex) => { for (const m of mats) { m.map = tex; m.needsUpdate = true; } };
+function swapTexture(url, mats, cache, key, repeat = null) {   // mats: a list, or a function that gives it when the image is in
+  const list = () => (typeof mats === 'function' ? mats() : mats);
+  const apply = (tex) => { for (const m of list()) { m.map = tex; m.needsUpdate = true; } };
   if (cache[key]) return apply(cache[key]);
   new THREE.TextureLoader().load(url, (tex) => {
-    const o = mats[0].map;
+    const o = list()[0].map;
     tex.flipY = false; tex.colorSpace = THREE.SRGBColorSpace;
     tex.wrapS = o ? o.wrapS : THREE.RepeatWrapping; tex.wrapT = o ? o.wrapT : THREE.RepeatWrapping;
     if (o) { tex.offset.copy(o.offset); tex.repeat.copy(o.repeat); tex.rotation = o.rotation; tex.center.copy(o.center); tex.channel = o.channel; }
@@ -1684,11 +1735,11 @@ function setWall(tile, size, keep, floor = bathFloor) {
   });
   for (const [role, mats] of Object.entries(bathFloorMats)) {
     if (!mats.length) continue;
-    if (same) sandTex(F[tile][role], mats, [1, 1]);
+    if (same && F[tile][role]) sandTex(F[tile][role], mats, [1, 1]);
     else for (const m of mats) if ('map0' in m.userData) { m.map = m.userData.map0; m.needsUpdate = true; }
   }
   $('sand-name').textContent = `${t.name} ${s.name} walls · ${t.note} · ${s.rows} · floor `
-    + (same ? `${t.name} 60 × 60 (3 × 3 tiles; toilet centred, 46 + 46 across)` : 'Bremen Ivoor 60 × 120');
+    + (same ? `${t.name} 60 × 60 (3 × 3 tiles, the shower curb in it too; toilet centred, 46 + 46 across)` : 'Bremen Ivoor 60 × 120');
   try { localStorage.setItem(WALL_KEY, `${tile}|${size}`); localStorage.setItem(BFLOOR_KEY, floor); } catch (_) {}
   sandTex(W[tile][size], wallTileMats, [1, 1]);
   updateFinishSum();
@@ -1816,7 +1867,9 @@ function setTile(key) {
   $('tiles-dot').style.backgroundColor = TILES[key].color;
   $('tiles-name').textContent = `${TILES[key].name} · ${TILES[key].note} · stacked vertical`;
   try { localStorage.setItem(TILE_KEY, key); } catch (_) {}
-  swapTexture(`textures/wall_tile_${key}_v.jpg`, tileTargets(), tileCache, `${key}_v`, tileRepeat());
+  // the targets are read when the image is in: at start-up the tiled ledge top joins after this call (it then copies
+  // the model's own green, which this load replaces)
+  swapTexture(`textures/wall_tile_${key}_v.jpg`, tileTargets, tileCache, `${key}_v`, tileRepeat());
   setTileNormal();
   updateFinishSum();
 }
