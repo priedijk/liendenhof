@@ -137,6 +137,7 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f
 .paints button.brick { background-image:
   linear-gradient(0deg, transparent 0 31%, rgba(255,255,255,.5) 31% 35%, transparent 35% 64%, rgba(255,255,255,.5) 64% 68%, transparent 68%); }
 .paints button.na { opacity: 0.35; }   /* a wall tile not made in the chosen size */
+.seg button.na { opacity: 0.45; }      /* the floor switch when the tile isn't made in 60 x 60 */
 .paints button.grid60 { background-image:
   linear-gradient(90deg, transparent 0 48%, rgba(0,0,0,.14) 48% 52%, transparent 52%), linear-gradient(0deg, transparent 0 48%, rgba(0,0,0,.14) 48% 52%, transparent 52%); }
 
@@ -230,6 +231,7 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f
           <span class="label" id="sand-title">Bathroom wall tiles</span>
           <div class="paints" id="sand-chips" role="group" aria-labelledby="sand-title"></div>
           <div class="seg" id="sand-size" role="group" aria-label="Wall tile size"><button type="button" data-s="60x120">60 × 120</button><button type="button" data-s="60x60">60 × 60</button></div>
+          <div class="seg" id="sand-floor" role="group" aria-label="Bathroom and toilet floor"><button type="button" data-f="bremen">Floor Bremen 60 × 120</button><button type="button" data-f="same">Floor the same 60 × 60</button></div>
           <span class="paint-name" id="sand-name"></span>
         </div>
         <div class="fin-sec" id="floor-panel" hidden>
@@ -316,14 +318,19 @@ const FLOOR_OPTS = {   // the wood floor in the living room, bedroom, study and 
 };
 const FLOOR_KEY = 'liendenhof-walkthrough-floor-v2';   // v2: the PVC floors (2026-10-16) replaced the oak/tile set
 const WALL_OPTS = {   // the bathroom walls outside the shower (apartment.json "bath_walls": an image per tile and size);
-  // the bathroom and toilet floors stay Bremen Ivoor 60 x 120, the model's own textures
+  // the bathroom and toilet floors are Bremen Ivoor 60 x 120 (the model's own textures) or the same 60 x 60 tile
+  // ("bath_floors"). The 60 x 60 candidates' colours come from shop photos set against Bremen: estimates
   bremen:     { name: 'Bremen Ivoor', note: '10 mm, calm cement look', color: '#e0dbd1' },
   coralstone: { name: 'Coralstone Calcite', note: '8 mm, warm stone with fossil flecks', color: '#ded6c8' },
   lomma:      { name: 'Lomma Bone', note: '10 mm, light and calm, fine speckle', color: '#e0d9cc' },
+  alexstone:  { name: 'Alexstone crème', note: 'Tegels in Huis €25.95/m² · 9 mm, R10/B · calm off-white, fine grain', color: '#dadacf' },
+  babilon:    { name: 'Babilon bone', note: 'Tegels in Huis €29.95/m² · R10 · a touch yellower, speckled stone', color: '#ddd6c9' },
+  belavu:     { name: 'Belavu ivoor', note: 'Tegels in Huis €23.95/m² · 9.6 mm, R10/B · warmer, like Petra, fine grain', color: '#ded7ca' },
+  siro:       { name: 'Siro beige crème', note: 'Tegels in Huis €28.95/m² · grip not stated · yellower, soft clouds', color: '#d8d1c1' },
 };
 const WALL_SIZES = { '60x120': { name: '60 × 120', rows: 'standing, 120 + 120 + a 20 cm strip at the ceiling' },
                      '60x60':  { name: '60 × 60', rows: '4 rows + a 20 cm strip at the ceiling' } };
-const WALL_KEY = 'liendenhof-walkthrough-bathwall', TILE_KEY = 'liendenhof-walkthrough-tile', FIN_KEY = 'liendenhof-walkthrough-finishes';
+const WALL_KEY = 'liendenhof-walkthrough-bathwall', BFLOOR_KEY = 'liendenhof-walkthrough-bathfloor', TILE_KEY = 'liendenhof-walkthrough-tile', FIN_KEY = 'liendenhof-walkthrough-finishes';
 const LEDGE_KEY = 'liendenhof-walkthrough-ledge';
 const EYE = 1.6, RADIUS = 0.22, WALK = 1.5, RUN = 3.0;
 const $ = (id) => document.getElementById(id);
@@ -522,6 +529,7 @@ new ResizeObserver(resize).observe(canvas);
 
 // ---------- state
 let meta = null, colliders = [], tileMat = null, modelRoot = null, floorMats = [], wallTileMats = [];
+const bathFloorMats = { floor: [], toilet: [] };   // "Floor tile" (bathroom) and "Floor tile toilet"
 let ledgeMat = null, ledgeKey = 'sill', sillTex;   // the shower ledge's switchable 2 cm top (meta.ledge)
 let doors = [];          // {id, label, hinge, closed, swing, length, node, angle, target}
 let paintMeshes = [];    // wall meshes that take vertex-colour paint
@@ -690,6 +698,8 @@ function setupModel(root, lightmaps = {}) {
     }
     if (n === 'Oak floor') floorMats.push(o.material);
     if (n === 'Floor tile wall') wallTileMats.push(o.material);
+    if (n === 'Floor tile') bathFloorMats.floor.push(o.material);
+    if (n === 'Floor tile toilet') bathFloorMats.toilet.push(o.material);
     if (n === 'Bath wall tile') {
       // the render's glossy clear-coat mirrors the bright environment in real time and washes the green out
       // glossy but not mirror-like: a normal map (wavy handmade glaze, rounded edges) gives the moving glints
@@ -1613,7 +1623,7 @@ function sandTex(url, mats, rep) {   // one shared image, one transform per surf
   const apply = (base) => {
     const t = base.clone(); t.repeat.set(rep[0], rep[1]); t.offset.set(0, 0); t.rotation = 0; t.center.set(0, 0);
     t.needsUpdate = true;
-    for (const m of mats) { m.map = t; m.needsUpdate = true; }
+    for (const m of mats) { if (!('map0' in m.userData)) m.userData.map0 = m.map; m.map = t; m.needsUpdate = true; }
   };
   if (sandCache[url]) return apply(sandCache[url]);
   new THREE.TextureLoader().load(url, (tex) => {
@@ -1633,13 +1643,18 @@ function buildWallUI() {
     $('sand-chips').append(b);
   }
   document.querySelectorAll('#sand-size button').forEach((b) => b.addEventListener('click', () => { setWall(wall[0], b.dataset.s, 'size'); canvas.focus({ preventScroll: true }); }));
+  const floors = meta.bath_floors && (bathFloorMats.floor.length || bathFloorMats.toilet.length);
+  $('sand-floor').hidden = !floors;
+  if (floors) document.querySelectorAll('#sand-floor button').forEach((b) => b.addEventListener('click', () => { setWall(wall[0], wall[1], 'tile', b.dataset.f); canvas.focus({ preventScroll: true }); }));
   $('sand-panel').hidden = false;
-  let saved = meta.bath_wall_default || ['bremen', '60x120'];
+  let saved = meta.bath_wall_default || ['bremen', '60x120'], floor = 'bremen';
   try { const s = (localStorage.getItem(WALL_KEY) || '').split('|'); if (s.length === 2) saved = s; } catch (_) {}
-  setWall(saved[0], saved[1], 'tile');
+  try { if (floors && localStorage.getItem(BFLOOR_KEY) === 'same') floor = 'same'; } catch (_) {}
+  setWall(saved[0], saved[1], 'tile', floor);
 }
+let bathFloor = 'bremen';   // 'bremen': the model's Bremen 60 x 120; 'same': the wall tile in 60 x 60 (if it is made so)
 // keep: which of the two was just chosen ('tile' or 'size'); when the tile isn't made in that size the other one gives way
-function setWall(tile, size, keep) {
+function setWall(tile, size, keep, floor = bathFloor) {
   const W = meta.bath_walls, made = (t, s) => !!(W[t] && W[t][s]);
   if (!W[tile]) tile = (meta.bath_wall_default || [])[0] in W ? meta.bath_wall_default[0] : Object.keys(W)[0];
   if (!made(tile, size)) {
@@ -1654,8 +1669,21 @@ function setWall(tile, size, keep) {
     b.title = WALL_OPTS[k].name + (na ? ` · not made in ${s.name}` : '');
   });
   document.querySelectorAll('#sand-size button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.s === size));
-  $('sand-name').textContent = `${t.name} ${s.name} walls · ${t.note} · ${s.rows} · floor Bremen Ivoor 60 × 120`;
-  try { localStorage.setItem(WALL_KEY, `${tile}|${size}`); } catch (_) {}
+  // the floors: the same tile when it is made in 60 x 60 (Bremen isn't: then the floor stays Bremen)
+  const F = meta.bath_floors || {}, same = floor === 'same' && F[tile];
+  bathFloor = floor;
+  document.querySelectorAll('#sand-floor button').forEach((b) => {
+    b.setAttribute('aria-pressed', b.dataset.f === floor);
+    if (b.dataset.f === 'same') { b.classList.toggle('na', !F[tile]); b.title = F[tile] ? '' : `${t.name} is not made in 60 × 60`; }
+  });
+  for (const [role, mats] of Object.entries(bathFloorMats)) {
+    if (!mats.length) continue;
+    if (same) sandTex(F[tile][role], mats, [1, 1]);
+    else for (const m of mats) if ('map0' in m.userData) { m.map = m.userData.map0; m.needsUpdate = true; }
+  }
+  $('sand-name').textContent = `${t.name} ${s.name} walls · ${t.note} · ${s.rows} · floor `
+    + (same ? `${t.name} 60 × 60 (3 × 3 tiles, toilet 60 + 32)` : 'Bremen Ivoor 60 × 120');
+  try { localStorage.setItem(WALL_KEY, `${tile}|${size}`); localStorage.setItem(BFLOOR_KEY, floor); } catch (_) {}
   sandTex(W[tile][size], wallTileMats, [1, 1]);
   updateFinishSum();
 }
