@@ -325,13 +325,14 @@ const FLOOR_OPTS = {   // the wood floor in the living room, bedroom, study and 
 const FLOOR_KEY = 'liendenhof-walkthrough-floor-v2';   // v2: the PVC floors (2026-10-16) replaced the oak/tile set
 const WALL_OPTS = {   // the bathroom walls outside the shower (apartment.json "bath_walls": an image per tile and size);
   // the bathroom and toilet floors are Bremen Ivoor 60 x 120 (the model's own textures) or the same 60 x 60 tile
-  // ("bath_floors"). The 60 x 60 candidates' colours come from shop photos set against Bremen: estimates
+  // ("bath_floors"). The 60 x 60 candidates' colours come from shop photos set against Bremen: estimates (Babilon bone,
+  // Belavu and Pietrastone from the user's own photos in the shop, beside the Petra sample)
   bremen:     { name: 'Bremen Ivoor', note: '10 mm, calm cement look', color: '#e0dbd1' },
-  coralstone: { name: 'Coralstone Calcite', note: '8 mm, warm stone with fossil flecks', color: '#ded6c8' },
-  lomma:      { name: 'Lomma Bone', note: '10 mm, light and calm, fine speckle', color: '#e0d9cc' },
   alexstone:  { name: 'Alexstone crème', note: 'Tegels in Huis €25.95/m² · 9 mm, R10/B · calm off-white, fine grain', color: '#dadacf' },
-  babilon:    { name: 'Babilon bone', note: 'Tegels in Huis €29.95/m² · R10 · a touch yellower, speckled stone', color: '#ddd6c9' },
-  belavu:     { name: 'Belavu ivoor', note: 'Tegels in Huis €23.95/m² · 9.6 mm, R10/B · warmer, like Petra, fine grain', color: '#ded7ca' },
+  babilon:    { name: 'Babilon bone', note: 'Tegels in Huis €29.95/m² · R10 · a shade darker and yellower, speckled stone', color: '#d7d0be' },
+  belavu:     { name: 'Belavu ivoor', note: 'Tegels in Huis €23.95/m² · 9.6 mm, R10/B · warm ivory, a shade darker; fine grain', color: '#d1c6b4' },
+  babilon_wit: { name: 'Babilon wit', note: 'Tegels in Huis €29.95/m² · 9 mm, R10/B, mat · closest to Bremen: light cream, soft stone clouds', color: '#dcdbd4' },
+  pietrastone: { name: 'Pietrastone zand', note: 'Tegels in Huis €29.95/m² · 9.5 mm, R10, mat · light sand, about as light as Bremen; soft veins, more shade per tile', color: '#e3e0d4' },
 };
 const WALL_SIZES = { '60x120': { name: '60 × 120', rows: 'standing, 120 + 120 + a 20 cm strip at the ceiling' },
                      '60x60':  { name: '60 × 60', rows: '4 rows + a 20 cm strip at the ceiling' } };
