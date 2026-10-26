@@ -333,13 +333,18 @@ const FLOOR_KEY = 'liendenhof-walkthrough-floor-v2';   // v2: the PVC floors (20
 const WALL_OPTS = {   // the bathroom walls outside the shower (apartment.json "bath_walls": an image per tile and size);
   // the bathroom and toilet floors are Bremen Ivoor 60 x 120 (the model's own textures) or the same 60 x 60 tile
   // ("bath_floors"). All colours are measured against the Petra Bone sample (2026-10-24): Babilon bone, Belavu and
-  // Pietrastone beside it in the user's shop photos, Bremen from the maker's photos, Babilon wit and Alexstone estimates
+  // Pietrastone beside it in the user's shop photos, Bremen from the maker's photos, Babilon wit and Alexstone estimates;
+  // Airock, Unika, Batela wit and Pietrastone tan (2026-10-26) estimates from the shop's studio photos
   bremen:     { name: 'Bremen Ivoor', note: '10 mm, calm cement look · lighter and whiter than Petra', color: '#ebebe6' },
   alexstone:  { name: 'Alexstone crème', note: 'Tegels in Huis €25.95/m² · 9 mm, R10/B · calm off-white, fine grain; between Petra and Bremen (estimate)', color: '#e3e3da' },
   babilon:    { name: 'Babilon bone', note: 'Tegels in Huis €29.95/m² · R10/B · the colour of Petra, speckled stone', color: '#e2e0d5' },
   belavu:     { name: 'Belavu ivoor', note: 'Tegels in Huis €23.95/m² · 9.6 mm, R10/B · warm ivory, a shade darker and warmer than Petra; fine grain', color: '#d6cdbe' },
   babilon_wit: { name: 'Babilon wit', note: 'Tegels in Huis €29.95/m² · 9 mm, R10/B, mat · a touch lighter than Bremen (estimate), soft stone clouds', color: '#edede8' },
   pietrastone: { name: 'Pietrastone zand', note: 'Tegels in Huis €29.95/m² · 9.5 mm, R10, mat · as light as Petra, with a pattern like a beach from above: washed bands and warmer patches', color: '#e0ded5' },
+  airock:     { name: 'Airock clay', note: 'Tegels in Huis €26.95/m² · 9.5 mm, R10, mat · warm sand slate: strata sweeping across each tile; as light as Petra, a touch yellower (estimate)', color: '#e2dcce' },
+  unika:      { name: 'Unika light', note: 'Tegels in Huis €27.95/m² · 9 mm, R10 · the colour of Petra (estimate), calm, with a few hairline white veins', color: '#dedace' },
+  batela_wit: { name: 'Batela wit', note: 'Tegels in Huis €27.95/m² · 9.5 mm, R10 · plain warm white, about as light as Bremen and a little warmer (estimate)', color: '#eceae2' },
+  pietrastone_tan: { name: 'Pietrastone tan', note: 'Tegels in Huis €29.95/m² · 9.5 mm, R10 · the Pietrastone beach in a warmer tan, a shade darker than zand (estimate)', color: '#dfdacd' },
 };
 const WALL_SIZES = { '60x120': { name: '60 × 120', rows: 'standing, 120 + 120 + a 20 cm strip at the ceiling' },
                      '60x60':  { name: '60 × 60', rows: '4 rows + a 20 cm strip at the ceiling' } };
