@@ -331,13 +331,13 @@ const FLOOR_OPTS = {   // the wood floor in the living room, bedroom, study and 
 };
 const FLOOR_KEY = 'liendenhof-walkthrough-floor-v2';   // v2: the PVC floors (2026-10-16) replaced the oak/tile set
 const WALL_OPTS = {   // the bathroom walls outside the shower (apartment.json "bath_walls": an image per tile and size);
-  // the bathroom and toilet floors are Bremen Ivoor 60 x 120 (the model's own textures) or the same 60 x 60 tile
+  // the bathroom and toilet floors are the same 60 x 60 tile or Bremen Ivoor 60 x 120 (the model's own: Babilon bone)
   // ("bath_floors"). All colours are measured against the Petra Bone sample (2026-10-24): Babilon bone and
   // Pietrastone beside it in the user's shop photos, Belavu (2026-10-27) from the maker's scans (STN Bellevue Ivory), Bremen from the maker's photos, Babilon wit and Alexstone estimates;
   // Airock, Unika, Batela wit and Pietrastone tan (2026-10-26) estimates from the shop's studio photos
   bremen:     { name: 'Bremen Ivoor', note: '10 mm, calm cement look · lighter and whiter than Petra', color: '#ebebe6' },
   alexstone:  { name: 'Alexstone crème', note: 'Tegels in Huis €25.95/m² · 9 mm, R10/B · calm off-white, fine grain; between Petra and Bremen (estimate)', color: '#e3e3da' },
-  babilon:    { name: 'Babilon bone', note: 'Tegels in Huis €29.95/m² · R10/B · the colour of Petra, speckled stone', color: '#e2e0d5' },
+  babilon:    { name: 'Babilon bone', note: 'Tegels in Huis €29.95/m² · 9.5 mm, R10/B · Ecoceramic; calm greige, a shade less yellow than Petra (a soft cream under warm lamps), speckled stone', color: '#dcdad2' },
   belavu:     { name: 'Belavu ivoor', note: 'Tegels in Huis €23.95/m² · 9.6 mm, R10 · STN Bellevue Ivory: as light as Petra but warmer and yellower; calm stone, soft clouds, a few soft pale veins', color: '#e3daca' },
   babilon_wit: { name: 'Babilon wit', note: 'Tegels in Huis €29.95/m² · 9 mm, R10/B, mat · a touch lighter than Bremen (estimate), soft stone clouds', color: '#edede8' },
   pietrastone: { name: 'Pietrastone zand', note: 'Tegels in Huis €29.95/m² · 9.5 mm, R10, mat · as light as Petra, with a pattern like a beach from above: washed bands and warmer patches', color: '#e0ded5' },
@@ -348,7 +348,8 @@ const WALL_OPTS = {   // the bathroom walls outside the shower (apartment.json "
 };
 const WALL_SIZES = { '60x120': { name: '60 × 120', rows: 'standing, 120 + 120 + a 20 cm strip at the ceiling' },
                      '60x60':  { name: '60 × 60', rows: '4 rows + a 20 cm strip at the ceiling' } };
-const WALL_KEY = 'liendenhof-walkthrough-bathwall', BFLOOR_KEY = 'liendenhof-walkthrough-bathfloor', TILE_KEY = 'liendenhof-walkthrough-tile', FIN_KEY = 'liendenhof-walkthrough-finishes';
+// v2 (2026-10-27): Babilon bone 60 x 60 on walls and floors became the default; everyone starts there again
+const WALL_KEY = 'liendenhof-walkthrough-bathwall-v2', BFLOOR_KEY = 'liendenhof-walkthrough-bathfloor-v2', TILE_KEY = 'liendenhof-walkthrough-tile', FIN_KEY = 'liendenhof-walkthrough-finishes';
 const LEDGE_KEY = 'liendenhof-walkthrough-ledge', SHOWER_KEY = 'liendenhof-walkthrough-shower';
 const EYE = 1.6, RADIUS = 0.22, WALK = 1.5, RUN = 3.0;
 const $ = (id) => document.getElementById(id);
@@ -1804,12 +1805,12 @@ function buildWallUI() {
   $('sand-floor').hidden = !floors;
   if (floors) document.querySelectorAll('#sand-floor button').forEach((b) => b.addEventListener('click', () => { setWall(wall[0], wall[1], 'tile', b.dataset.f); canvas.focus({ preventScroll: true }); }));
   $('sand-panel').hidden = false;
-  let saved = meta.bath_wall_default || ['bremen', '60x120'], floor = 'bremen';
+  let saved = meta.bath_wall_default || ['bremen', '60x120'], floor = floors && meta.bath_floor_default || 'bremen';
   try { const s = (localStorage.getItem(WALL_KEY) || '').split('|'); if (s.length === 2) saved = s; } catch (_) {}
-  try { if (floors && localStorage.getItem(BFLOOR_KEY) === 'same') floor = 'same'; } catch (_) {}
+  try { const f = localStorage.getItem(BFLOOR_KEY); if (floors && (f === 'same' || f === 'bremen')) floor = f; } catch (_) {}
   setWall(saved[0], saved[1], 'tile', floor);
 }
-let bathFloor = 'bremen';   // 'bremen': the model's Bremen 60 x 120; 'same': the wall tile in 60 x 60 (if it is made so)
+let bathFloor = 'bremen';   // 'bremen': Bremen 60 x 120 (bath_floors.bremen); 'same': the wall tile in 60 x 60 (if it is made so)
 // keep: which of the two was just chosen ('tile' or 'size'); when the tile isn't made in that size the other one gives way
 function setWall(tile, size, keep, floor = bathFloor) {
   const W = meta.bath_walls, made = (t, s) => !!(W[t] && W[t][s]);
@@ -1826,16 +1827,18 @@ function setWall(tile, size, keep, floor = bathFloor) {
     b.title = WALL_OPTS[k].name + (na ? ` · not made in ${s.name}` : '');
   });
   document.querySelectorAll('#sand-size button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.s === size));
-  // the floors: the same tile when it is made in 60 x 60 (Bremen isn't: then the floor stays Bremen)
-  const F = meta.bath_floors || {}, same = floor === 'same' && F[tile];
+  // the floors: the same tile when it is made in 60 x 60 (Bremen isn't: then the floor stays Bremen 60 x 120). Since
+  // 2026-10-27 the model's own floor is Babilon bone 60 x 60, so Bremen comes from bath_floors too
+  const F = meta.bath_floors || {}, sameOK = (k) => k !== 'bremen' && !!F[k], same = floor === 'same' && sameOK(tile);
+  const pick = same ? F[tile] : F.bremen;
   bathFloor = floor;
   document.querySelectorAll('#sand-floor button').forEach((b) => {
     b.setAttribute('aria-pressed', b.dataset.f === floor);
-    if (b.dataset.f === 'same') { b.classList.toggle('na', !F[tile]); b.title = F[tile] ? '' : `${t.name} is not made in 60 × 60`; }
+    if (b.dataset.f === 'same') { b.classList.toggle('na', !sameOK(tile)); b.title = sameOK(tile) ? '' : `${t.name} is not made in 60 × 60`; }
   });
   for (const [role, mats] of Object.entries(bathFloorMats)) {
     if (!mats.length) continue;
-    if (same && F[tile][role]) sandTex(F[tile][role], mats, [1, 1]);
+    if (pick && pick[role]) sandTex(pick[role], mats, [1, 1]);
     else for (const m of mats) if ('map0' in m.userData) { m.map = m.userData.map0; m.needsUpdate = true; }
   }
   $('sand-name').textContent = `${t.name} ${s.name} walls · ${t.note} · ${s.rows} · floor `
@@ -2027,9 +2030,10 @@ function setTile(key) {
   updateFinishSum();
 }
 
-// shower ledge (1.02 m, across the 1.8 m back wall): a sill of the floor tile on top (Bremen Ivoor, two ~90 cm
-// pieces, one joint in the middle; the joint is in the texture) or the Rio wrapped over the top (one green block)
-const LEDGE_OPTS = { sill: 'Floor-tile sill · Bremen Ivoor, two pieces, one joint in line with the floor’s', tiled: 'Tiled top · Rio on top, one green block' };
+// shower ledge (1.02 m, across the 1.8 m back wall): a sill of the model's floor tile on top (Babilon bone since
+// 2026-10-27: three 60 cm pieces, the joints in line with the floor's, in the texture; it doesn't follow the floor
+// switch) or the Rio wrapped over the top (one green block)
+const LEDGE_OPTS = { sill: 'Floor-tile sill · Babilon bone, three 60 cm pieces, the joints in line with the floor’s', tiled: 'Tiled top · Rio on top, one green block' };
 function tileTargets() { return ledgeMat && ledgeKey === 'tiled' ? [tileMat, ledgeMat] : [tileMat]; }
 
 // ---------- shower front (meta.shower): the walk-in, a curb with a glass door, or a curb without. Each option is
@@ -2079,7 +2083,7 @@ function buildLedgeUI() {
   try { saved = localStorage.getItem(LEDGE_KEY) || saved; } catch (_) {}
   setLedge(LEDGE_OPTS[saved] ? saved : meta.ledge.default || 'sill');
 }
-function loadSill() {   // the jointless Bremen texture, laid with the same UVs as the tile it replaces
+function loadSill() {   // the floor tile's sill texture (meta.ledge.sill), laid with the same UVs as the tile it replaces
   return sillTex ||= new Promise((ok) => {
     if (!meta.ledge.sill) return ok(null);
     new THREE.TextureLoader().load(meta.ledge.sill, (t) => {
