@@ -236,7 +236,7 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f
         <div class="fin-sec" id="sand-panel" hidden>
           <span class="label" id="sand-title">Bathroom wall tiles</span>
           <div class="paints" id="sand-chips" role="group" aria-labelledby="sand-title"></div>
-          <div class="seg" id="sand-size" role="group" aria-label="Wall tile size"><button type="button" data-s="60x120">60 × 120</button><button type="button" data-s="60x60">60 × 60</button></div>
+          <div class="seg" id="sand-size" role="group" aria-label="Wall tile size"><button type="button" data-s="60x120">60 × 120</button><button type="button" data-s="60x60">60 × 60</button><button type="button" data-s="30x60">30 × 60</button></div>
           <div class="seg" id="sand-floor" role="group" aria-label="Bathroom and toilet floor"><button type="button" data-f="bremen">Floor Bremen 60 × 120</button><button type="button" data-f="same">Floor the same 60 × 60</button></div>
           <span class="paint-name" id="sand-name"></span>
         </div>
@@ -334,20 +334,20 @@ const WALL_OPTS = {   // the bathroom walls outside the shower (apartment.json "
   // the bathroom and toilet floors are the same 60 x 60 tile or Bremen Ivoor 60 x 120 (the model's own: Babilon bone)
   // ("bath_floors"). All colours are measured against the Petra Bone sample (2026-10-24): Babilon bone beside it in the
   // user's shop photos, Belavu (2026-10-27) from the maker's scans (STN Bellevue Ivory), Bremen from the maker's photos,
-  // Babilon wit and Alexstone estimates; Unika and Batela wit (2026-10-26) estimates from the shop's studio photos.
-  // Pietrastone zand / tan and Airock clay were dropped (user, 2026-10-27)
+  // Babilon wit an estimate; Batela wit (2026-10-26) an estimate from the shop's studio photos. Pietrastone zand / tan
+  // and Airock clay were dropped (user, 2026-10-27), Alexstone crème and Unika light on 2026-10-28
   bremen:     { name: 'Bremen Ivoor', note: '10 mm, calm cement look · lighter and whiter than Petra', color: '#ebebe6' },
-  alexstone:  { name: 'Alexstone crème', note: 'Tegels in Huis €25.95/m² · 9 mm, R10/B · calm off-white, fine grain; between Petra and Bremen (estimate)', color: '#e3e3da' },
-  babilon:    { name: 'Babilon bone', note: 'Tegels in Huis €29.95/m² · 9.5 mm, R10/B · Ecoceramic; calm greige, a shade less yellow than Petra (a soft cream under warm lamps), speckled stone', color: '#dcdad2' },
+  babilon:    { name: 'Babilon bone', note: 'Tegels in Huis €29.95/m² · 9.5 mm, R10/B, rectified in 30 × 60 and 60 × 60 · Ecoceramic; calm greige, a shade less yellow than Petra (a soft cream under warm lamps), speckled stone', color: '#dcdad2' },
   belavu:     { name: 'Belavu ivoor', note: 'Tegels in Huis €23.95/m² · 9.6 mm, R10 · STN Bellevue Ivory: as light as Petra but warmer and yellower; calm stone, soft clouds, a few soft pale veins', color: '#e3daca' },
   babilon_wit: { name: 'Babilon wit', note: 'Tegels in Huis €29.95/m² · 9 mm, R10/B, mat · a touch lighter than Bremen (estimate), soft stone clouds', color: '#edede8' },
-  unika:      { name: 'Unika light', note: 'Tegels in Huis €27.95/m² · 9 mm, R10 · the colour of Petra (estimate), calm, with a few hairline white veins', color: '#dedace' },
   batela_wit: { name: 'Batela wit', note: 'Tegels in Huis €27.95/m² · 9.5 mm, R10 · plain warm white, about as light as Bremen and a little warmer (estimate)', color: '#eceae2' },
 };
 const WALL_SIZES = { '60x120': { name: '60 × 120', rows: 'standing, 120 + 120 + a 20 cm strip at the ceiling' },
-                     '60x60':  { name: '60 × 60', rows: '4 rows + a 20 cm strip at the ceiling' } };
-// v2 (2026-10-27): Babilon bone 60 x 60 on walls and floors became the default; everyone starts there again
-const WALL_KEY = 'liendenhof-walkthrough-bathwall-v2', BFLOOR_KEY = 'liendenhof-walkthrough-bathfloor-v2', TILE_KEY = 'liendenhof-walkthrough-tile', FIN_KEY = 'liendenhof-walkthrough-finishes';
+                     '60x60':  { name: '60 × 60', rows: '4 rows + a 20 cm strip at the ceiling' },
+                     '30x60':  { name: '30 × 60', rows: 'lying, stack bond: 8 rows + a 20 cm strip at the ceiling' } };
+// v2 (2026-10-27): Babilon bone 60 x 60 on walls and floors became the default; v3 (2026-10-28): Babilon bone 30 x 60 on
+// the walls (60 x 60 on the floors); everyone starts there again
+const WALL_KEY = 'liendenhof-walkthrough-bathwall-v3', BFLOOR_KEY = 'liendenhof-walkthrough-bathfloor-v2', TILE_KEY = 'liendenhof-walkthrough-tile', FIN_KEY = 'liendenhof-walkthrough-finishes';
 const LEDGE_KEY = 'liendenhof-walkthrough-ledge', SHOWER_KEY = 'liendenhof-walkthrough-shower';
 const EYE = 1.6, RADIUS = 0.22, WALK = 1.5, RUN = 3.0;
 const $ = (id) => document.getElementById(id);
