@@ -853,7 +853,7 @@ function setupModel(root, lightmaps = {}) {
       }
     });
   }
-  // curtains and the study blind: drawn open; their glTF morph target 'closed' shuts them (E, like a door)
+  // curtains (the study had a roman blind until 2026-10-30): drawn open; their glTF morph target 'closed' shuts them (E, like a door)
   curtains = (meta.curtains || []).map((c) => {
     const meshes = [];
     for (const n of c.nodes) root.getObjectByName(n)?.traverse((o) => { if (o.isMesh && o.morphTargetInfluences) meshes.push(o); });
