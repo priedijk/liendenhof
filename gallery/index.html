@@ -109,7 +109,7 @@ figcaption { display: grid; gap: 2px; }
     <h1>Liendenhof Renders</h1>
     <p class="lede">Second pass of the renovated apartment, rendered in Blender (Cycles) from the floor plan. It has your kitchen, bathroom and floor changes, a study instead of the second bedroom, and new lighting and cameras throughout.</p>
     <div class="meta">
-      <span>Rendered <b>16–18 Oct 2026</b></span><span>Ceiling <b>2.60 m</b></span><span>Frames <b>1600 × 1200</b></span><span>Cycles <b>384 samples</b></span>
+      <span>Rendered <b>16–31 Oct 2026</b></span><span>Ceiling <b>2.60 m</b></span><span>Frames <b>1600 × 1200</b></span><span>Cycles <b>384 samples</b></span>
       <a class="walk" href="../">Walk through it in 3D →</a>
     </div>
   </header>
@@ -118,47 +118,48 @@ figcaption { display: grid; gap: 2px; }
     <div class="section-head">
       <h2 id="wet-h">Bathroom &amp; toilet · tile colour</h2>
       <div class="swatches" role="group" aria-label="Tile colour">
-        <button class="swatch" id="sw-turq" data-v="rio_turquoise" aria-pressed="true"><i style="background:#415c58"></i>Rio Turquoise</button>
+        <button class="swatch" id="sw-clay" data-v="rio_clay" aria-pressed="true"><i style="background:#ad5930"></i>Rio Clay</button>
+        <button class="swatch" id="sw-turq" data-v="rio_turquoise" aria-pressed="false"><i style="background:#415c58"></i>Rio Turquoise</button>
         <button class="swatch" id="sw-blue" data-v="rio_blue" aria-pressed="false"><i style="background:#71919c"></i>Rio Blue</button>
-        <button class="swatch" id="sw-clay" data-v="rio_clay" aria-pressed="false"><i style="background:#ad5930"></i>Rio Clay</button>
       </div>
     </div>
     <div class="wet">
       <figure>
-        <button class="shot" data-view="bathroom" data-cap="Badkamer · from the door"><img data-view="bathroom" src="renders/bathroom_rio_turquoise.jpg" alt="Bathroom from the door: round mirror and vanity on the left, glass panel and shower on the mirror wall, towel radiator on the right"></button>
+        <button class="shot" data-view="bathroom" data-cap="Badkamer · from the door"><img data-view="bathroom" src="renders/bathroom_rio_clay.jpg" alt="Bathroom from the door: round mirror and vanity on the left, glass panel and shower on the mirror wall, towel radiator on the right"></button>
         <figcaption><span class="room-name">Bathroom <span>· from the door</span></span><span class="dims">2.81 × 1.82 m · shower 1.0 m across the full width</span></figcaption>
       </figure>
       <figure>
-        <button class="shot" data-view="bathroom_back" data-cap="Badkamer · towards the door"><img data-view="bathroom_back" src="renders/bathroom_back_rio_turquoise.jpg" alt="Bathroom looking back to the door: washer column in the corner, towel radiator on the south wall" loading="lazy"></button>
+        <button class="shot" data-view="bathroom_back" data-cap="Badkamer · towards the door"><img data-view="bathroom_back" src="renders/bathroom_back_rio_clay.jpg" alt="Bathroom looking back to the door: washer column in the corner, towel radiator on the south wall" loading="lazy"></button>
         <figcaption><span class="room-name">Bathroom <span>· towards the door</span></span><span class="dims">washer column in the corner</span></figcaption>
       </figure>
       <figure>
-        <button class="shot tall" data-view="toilet" data-cap="Toilet"><img data-view="toilet" src="renders/toilet_rio_turquoise.jpg" alt="Toilet with half-height tiles, wall-hung WC and a small fountain basin" loading="lazy"></button>
+        <button class="shot tall" data-view="toilet" data-cap="Toilet"><img data-view="toilet" src="renders/toilet_rio_clay.jpg" alt="Toilet with half-height tiles, wall-hung WC and a small fountain basin" loading="lazy"></button>
         <figcaption><span class="room-name">Toilet</span><span class="dims">1.78 × 0.92 m · same tile</span></figcaption>
       </figure>
     </div>
     <div class="walls">
-      <p class="hint">The bathroom walls outside the shower, over the Bremen Ivoor 60 × 120 floor: three columns of 60 that carry the floor joints up the wall, and a 20 cm strip at the ceiling (120 + 120 + 20). Bremen is lighter and whiter than the Petra sample, as Ceramic Connection's own photos show it. The 60 × 60 candidates from Tegels in Huis (Babilon bone: the colour of Petra; Belavu ivoor: the warmest; Babilon wit, Batela wit), on the walls and on the floor, are in the walk-through's Finishes panel.</p>
+      <p class="hint">The bathroom walls outside the shower: Babilon bone 30 × 60 (Tegels in Huis), lying in stack bond, eight rows of 30 from the floor and a 20 cm strip at the ceiling. The vertical joints carry on from the Babilon bone 60 × 60 floor, so wall and floor read apart while staying one tile. The other candidates (Bremen Ivoor, Belavu ivoor, Babilon wit, Batela wit, and Babilon bone 60 × 60 on the walls) are in the walk-through's Finishes panel.</p>
     </div>
     <div class="ledge">
       <figure>
-        <button class="shot" data-view="shower" id="ledge-shot" data-cap="Douche · muurtje met vloertegel als afdekplaat"><img data-view="shower" id="ledge-img" src="renders/shower_sill_rio_turquoise.jpg" alt="Shower close-up: a 1.00 m ledge wall across the back wall in the Rio tile, finished with a slim metal edge profile and topped with a sill of the ivory floor tile in two pieces with one joint in the middle, bottles on top" loading="lazy"></button>
-        <figcaption><span class="room-name">Shower ledge <span id="ledge-sub">· floor-tile sill</span></span><span class="dims" id="ledge-dims">1.00 m high · 15 cm deep · metal edge profile · Bremen Ivoor top, 2 × ~90 cm</span></figcaption>
+        <button class="shot" data-view="shower" id="ledge-shot" data-cap="Douche · muurtje met vloertegel als afdekplaat"><img data-view="shower" id="ledge-img" src="renders/shower_sill_rio_clay.jpg" alt="Shower close-up: a 1.00 m ledge wall across the back wall in the Rio tile, finished with a slim metal edge profile and topped with a sill of the Babilon bone floor tile in three pieces of 60, bottles on top" loading="lazy"></button>
+        <figcaption><span class="room-name">Shower ledge <span id="ledge-sub">· floor-tile sill</span></span><span class="dims" id="ledge-dims">1.00 m high · 15 cm deep · metal edge profile · Babilon bone top, 3 × 60 cm</span></figcaption>
       </figure>
       <div class="ledge-side">
         <div class="swatches" role="group" aria-label="Ledge top">
           <button class="swatch" data-ledge="sill" aria-pressed="true">Floor-tile sill</button>
           <button class="swatch" data-ledge="tiled" aria-pressed="false">Tiled top</button>
         </div>
-        <p class="hint">The top of the ledge: a sill of the Bremen floor tile (the pick) or the Rio on top as well. Both follow the tile colour above.</p>
+        <p class="hint">The top of the ledge: a sill of the Babilon bone floor tile (the pick) or the Rio on top as well. Both follow the tile colour above.</p>
       </div>
     </div>
     <div class="notes">
       <p>The toilet uses the same tile as the shower, so the two always match. The glass panel now stands on the sink side, and the rain head, hand shower and thermostat are on the mirror wall. You walk into the shower from the radiator side. Across the back of the shower a solid ledge wall, 1.00 m high and 15 cm deep, replaces the niche: four full rows of tiles, so its joints run on from the wall behind it, straight into a square metal edge profile (its 10 mm side on top, so from the door you see only a thin line), and the drain sits right in front of it.</p>
       <dl class="spec">
-        <dt>Wall tile</dt><dd>Ceramic Connection Rio, glazed 6 × 25 cm, stacked vertically with grout in the tile colour, in shower and toilet. Shortlist: Turquoise, Blue, Clay</dd>
-        <dt>Floor + walls</dt><dd>Floor: Bremen Ivoor 60 × 120 cm (R10, 10 mm): the dry floor 3 × 60 by two equal 91 cm cuts with one joint down the middle; the shower floor its own sloped field to the linear drain; the toilet floor one tile across (3 tiles). Walls: Bremen standing, 120 + 120 + a 20 cm strip at the ceiling, three tiles per wall. The 60 × 60 candidates (walls and floor, the shower curb in the same tile) are in the walk-through</dd>
-        <dt>Shower ledge</dt><dd>Solid wall over the full back wall, 1.00 m × 15 cm deep, a square metal edge profile along the front (thick side on top). Top: a sill of the floor tile, Bremen Ivoor, in two ~90 cm pieces with one joint in the middle, in line with the floor's centre joint (the pick). The walk-through also has the Rio wrapped over the top</dd>
+        <dt>Wall tile</dt><dd>Ceramic Connection Rio, glazed 6 × 25 cm, stacked vertically with grout in the tile colour, in shower and toilet. The pick: Clay (terracotta); Turquoise and Blue are the alternatives</dd>
+        <dt>Floor + walls</dt><dd>Floor: Babilon bone 60 × 60 cm (Tegels in Huis, R10): the bathroom 3 × 3 tiles, the shower floor its own sloped field to the linear drain, the toilet floor centred, the shower curb cut from the same tile. Walls: Babilon bone 30 × 60 lying, eight rows of 30 and a 20 cm strip at the ceiling, the vertical joints in line with the floor's. The other candidates are in the walk-through</dd>
+        <dt>Shower ledge</dt><dd>Solid wall over the full back wall, 1.00 m × 15 cm deep, a square metal edge profile along the front (thick side on top). Top: a sill of the floor tile, Babilon bone, in three pieces of 60 (the pick). The walk-through also has the Rio wrapped over the top</dd>
+        <dt>Shower set</dt><dd>GROHE Vitalio Comfort 250 with the Grohtherm bar thermostat, chrome: 250 mm round rain head and a hand shower on the mirror wall</dd>
         <dt>South wall</dt><dd>Washer column in the corner by the door, towel radiator next to it</dd>
       </dl>
     </div>
@@ -169,12 +170,12 @@ figcaption { display: grid; gap: 2px; }
     <div class="grid">
       <figure class="room feature">
         <button class="shot" data-src="renders/living.jpg" data-cap="Woonkamer"><img src="renders/living.jpg" alt="Living room from the corridor door: dining table in front, sofa, coffee table and floor lamp towards the window, TV wall and the opening to the study on the left" loading="lazy"></button>
-        <figcaption><span class="room-name">Living room <span>· Woonkamer</span></span><span class="dims">4.03 × 6.21 m (8.11 m with the kitchen) · warm white, Warm sage behind the sofa and on the hall-door wall · Erasmusbrug + Euromast prints over the sofa</span></figcaption>
+        <figcaption><span class="room-name">Living room <span>· Woonkamer</span></span><span class="dims">4.03 × 5.91 m (8.11 m with the kitchen) · warm white, Warm sage behind the sofa and on the hall-door wall · Erasmusbrug + Euromast prints over the sofa</span></figcaption>
         <span class="room-note">The tabby on the sofa is one of the two cats.</span>
       </figure>
       <figure class="room">
-        <button class="shot" data-src="renders/kitchen.jpg" data-cap="Keuken"><img src="renders/kitchen.jpg" alt="U-shaped kitchen with greige fronts, tall oven and fridge column on the left and upper cabinets on both runs" loading="lazy"></button>
-        <figcaption><span class="room-name">Kitchen <span>· Keuken</span></span><span class="dims">2.81 × 1.90 m · solid corner wall next to the oven</span></figcaption>
+        <button class="shot" data-src="renders/kitchen.jpg" data-cap="Keuken · arizona beige, Rossa Nova"><img src="renders/kitchen.jpg" alt="U-shaped kitchen with arizona beige handle-less fronts, a cream Rossa Nova composite worktop with fine golden veins, Rio Ivoor tiles behind it, the tall oven and fridge column on the left and upper cabinets on both runs" loading="lazy"></button>
+        <figcaption><span class="room-name">Kitchen <span>· Keuken</span></span><span class="dims">2.81 × 2.20 m · arizona beige fronts · Rossa Nova top (Caesarstone 5144) · Rio Ivoor tiles</span></figcaption>
         <span class="room-note">The corner next to the oven is solid wall from floor to ceiling, around the fixed downpipe. The counter and upper cabinets stop against it.</span>
       </figure>
       <figure class="room">
@@ -183,7 +184,7 @@ figcaption { display: grid; gap: 2px; }
       </figure>
       <figure class="room feature">
         <button class="shot" data-src="renders/dining.jpg" data-cap="Eethoek"><img src="renders/dining.jpg" alt="Looking from the window end past the sofa and coffee table to the oak dining table for four and a black pendant, with the kitchen behind it" loading="lazy"></button>
-        <figcaption><span class="room-name">Dining <span>· Eethoek</span></span><span class="dims">120 × 80 cm oak table · four chairs · 1 m clear of the kitchen</span></figcaption>
+        <figcaption><span class="room-name">Dining <span>· Eethoek</span></span><span class="dims">120 × 80 cm oak table · four chairs · ~0.75 m clear of the kitchen</span></figcaption>
         <span class="room-note">The table now stands at the kitchen end, so the lounge gets the window side of the room.</span>
       </figure>
       <figure class="room">
@@ -201,9 +202,9 @@ figcaption { display: grid; gap: 2px; }
     <div>
       <h3>Changed in this round</h3>
       <ul>
-        <li>Curtains: blackout wave curtains in deep olive-charcoal in the bedroom, oat-linen wave curtains in the living room and a roman blind in the same linen in the study (drawn up above the window). In the walk-through they open and shut (E).</li>
-        <li>Bathroom tiles: Bremen re-coloured lighter and whiter (the light sample measured before was Petra Bone). Coralstone and Lomma are out; the 60 × 60 candidates from Tegels in Huis are in the walk-through, measured beside the Petra sample.</li>
-        <li>Re-rendered: living room, study, bedroom, bathroom, toilet and the shower ledge.</li>
+        <li>Kitchen: the Rossa Nova composite top from Kvik's quote (Caesarstone 5144, via Jetstone) on arizona beige fronts, Rio Ivoor tiles as the backsplash, and the kitchen at its measured depth. The walk-through has the whole worktop shortlist: Fresh Concrete, Linen Cream, Rossa Nova, Taj Royale, Clamshell, Raw Concrete and Shitake.</li>
+        <li>Bathroom: Babilon bone, 30 × 60 lying on the walls and 60 × 60 on the floor, the curb and the ledge top; Rio Clay is now the pick for the shower and toilet; the GROHE Vitalio Comfort 250 shower set.</li>
+        <li>Re-rendered: kitchen, dining, bathroom, toilet and the shower ledge.</li>
       </ul>
     </div>
     <div class="stack">
@@ -232,18 +233,19 @@ figcaption { display: grid; gap: 2px; }
 
 <script>
 const names = { rio_turquoise: "Rio Turquoise", rio_blue: "Rio Blue", rio_clay: "Rio Clay" };
-let tile = "rio_turquoise", ledge = "sill", wall = "bremen", size = "60x120";
-// the bathroom views are rendered per wall tile and size: renders/<view>[_<wall>[_60x60]]_<tile>.jpg (Bremen: plain names)
-const WALL_VIEWS = ["bathroom", "bathroom_back"];
-const WALLS = { bremen: { name: "Bremen Ivoor", sizes: ["60x120"] } };   // the 60 x 60 candidates are in the walk-through only
-const SIZES = { "60x120": "60 × 120", "60x60": "60 × 60" };
+let tile = "rio_clay", ledge = "sill", wall = "babilon", size = "30x60";
+// the bathroom views are rendered per wall tile and size: renders/<view>[_<wall>_<size>]_<tile>.jpg; the default wall
+// (Babilon bone 30 x 60, apartment.py's DEF_WALL) keeps the plain names
+const WALL_VIEWS = ["bathroom", "bathroom_back"], DEF_WALL = "babilon", DEF_SIZE = "30x60";
+const WALLS = { babilon: { name: "Babilon bone", sizes: ["30x60"] } };   // the other candidates are in the walk-through only
+const SIZES = { "60x120": "60 × 120", "60x60": "60 × 60", "30x60": "30 × 60" };
 const LEDGE = {   // the shower close-up: rendered per ledge top and per tile colour (renders/shower_<top>_<tile>.jpg)
-  sill:  { sub: "· floor-tile sill", dims: "1.00 m high · 15 cm deep · metal edge profile · Bremen Ivoor top, 2 × ~90 cm",
+  sill:  { sub: "· floor-tile sill", dims: "1.00 m high · 15 cm deep · metal edge profile · Babilon bone top, 3 × 60 cm",
            cap: "Douche · muurtje met vloertegel als afdekplaat" },
   tiled: { sub: "· tiled top", dims: "the option: Rio on top, one block · same edge profile",
            cap: "Douche · muurtje, betegelde bovenkant" },
 };
-const wallPart = (view) => !WALL_VIEWS.includes(view) || wall === "bremen" ? "" : `_${wall}${size === "60x60" ? "_60x60" : ""}`;
+const wallPart = (view) => !WALL_VIEWS.includes(view) || (wall === DEF_WALL && size === DEF_SIZE) ? "" : `_${wall}${size === "60x120" ? "" : "_" + size}`;
 const srcFor = (view, t = tile) => view === "shower" ? `renders/shower_${ledge}_${t}.jpg` : `renders/${view}${wallPart(view)}_${t}.jpg`;
 const refresh = () => document.querySelectorAll("img[data-view]").forEach(img => { img.src = srcFor(img.dataset.view); });
 document.querySelectorAll(".swatch[data-v]").forEach(btn => btn.addEventListener("click", () => {

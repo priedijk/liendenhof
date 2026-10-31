@@ -347,7 +347,7 @@ const WALL_SIZES = { '60x120': { name: '60 × 120', rows: 'standing, 120 + 120 +
                      '30x60':  { name: '30 × 60', rows: 'lying, stack bond: 8 rows + a 20 cm strip at the ceiling' } };
 // v2 (2026-10-27): Babilon bone 60 x 60 on walls and floors became the default; v3 (2026-10-28): Babilon bone 30 x 60 on
 // the walls (60 x 60 on the floors); everyone starts there again
-const WALL_KEY = 'liendenhof-walkthrough-bathwall-v3', BFLOOR_KEY = 'liendenhof-walkthrough-bathfloor-v2', TILE_KEY = 'liendenhof-walkthrough-tile', FIN_KEY = 'liendenhof-walkthrough-finishes';
+const WALL_KEY = 'liendenhof-walkthrough-bathwall-v3', BFLOOR_KEY = 'liendenhof-walkthrough-bathfloor-v2', TILE_KEY = 'liendenhof-walkthrough-tile-v2', FIN_KEY = 'liendenhof-walkthrough-finishes';
 const LEDGE_KEY = 'liendenhof-walkthrough-ledge', SHOWER_KEY = 'liendenhof-walkthrough-shower';
 const EYE = 1.6, RADIUS = 0.22, WALK = 1.5, RUN = 3.0;
 const $ = (id) => document.getElementById(id);
@@ -1722,7 +1722,7 @@ function buildUI() {
   }
   sel.addEventListener('change', () => { setTile(sel.value); sel.blur(); canvas.focus({ preventScroll: true }); });
   if (!tileMat || !sel.options.length) { document.querySelector('.fin-sec.tiles').hidden = true; return; }
-  const def = meta.tile_default || 'rio_turquoise';
+  const def = meta.tile_default || 'rio_clay';
   let saved = def;
   try { saved = localStorage.getItem(TILE_KEY) || saved; } catch (_) {}
   setTile(meta.tiles?.[saved] && TILES[saved] ? saved : def);
@@ -1891,7 +1891,7 @@ const KTOP_OPTS = {   // the user's Jetstone shortlist (2026-10-31); color: the 
   raw_concrete: { name: 'Raw Concrete', note: 'Caesarstone 4004 · warm grey-beige concrete, satin · contrast with crema', color: '#aea79e' },
   shitake:      { name: 'Shitake', note: 'Caesarstone 4230 · warm sand, brown speckle · contrast with crema', color: '#b4a193' },
 };
-const KITCHEN_KEY = 'liendenhof-walkthrough-kitchen';
+const KITCHEN_KEY = 'liendenhof-walkthrough-kitchen-v2';   // -v2 (2026-10-31): everyone starts on Rossa Nova
 const frontMats = [], topMats = [], topCache = {};
 let kitchen = null;   // [front, top]
 function buildKitchenUI() {
