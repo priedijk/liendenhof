@@ -1874,11 +1874,13 @@ function setFloor(key) {
   updateFinishSum();
 }
 
-// ---------- kitchen (meta.kitchen, user 2026-10-25): the Kvik MANO colour on the fronts and cover panels (material
+// ---------- kitchen (meta.kitchen, user 2026-10-25): the front colour (Superkeukens zandgrijs by default since 2026-11-06) on the fronts and cover panels (material
 // "Kitchen greige", colours from apartment.py) and a composite top on the worktop ("Worktop stone", one image each; the
 // backsplash is Rio Ivoor tile since 2026-10-27, its own material); the lightmaps stay, baked with the model's own pair
 const KFRONT_OPTS = {
-  arizona_beige: { name: 'Arizona beige', note: 'Kvik MANO · warm greige, the first pick' },
+  zandgrijs:     { name: 'Zandgrijs', note: 'Superkeukens · warm taupe middle tone, the pick for the darker corner' },
+  zand:          { name: 'Zand', note: 'Superkeukens · the same warm sand, a step lighter' },
+  arizona_beige: { name: 'Arizona beige', note: 'Kvik MANO · warm greige, a touch cooler' },
   crema:         { name: 'Crema', note: 'Kvik MANO · light warm cream' },
   mocha:         { name: 'Mocha', note: 'Kvik MANO · warm taupe brown' },
 };
@@ -1891,7 +1893,7 @@ const KTOP_OPTS = {   // the user's Jetstone shortlist (2026-10-31); color: the 
   raw_concrete: { name: 'Raw Concrete', note: 'Caesarstone 4004 · warm grey-beige concrete, satin · contrast with crema', color: '#aea79e' },
   shitake:      { name: 'Shitake', note: 'Caesarstone 4230 · warm sand, brown speckle · contrast with crema', color: '#b4a193' },
 };
-const KITCHEN_KEY = 'liendenhof-walkthrough-kitchen-v2';   // -v2 (2026-10-31): everyone starts on Rossa Nova
+const KITCHEN_KEY = 'liendenhof-walkthrough-kitchen-v3';   // -v2 (2026-10-31): everyone starts on Rossa Nova; -v3 (2026-11-06): on zandgrijs
 const frontMats = [], topMats = [], topCache = {};
 let kitchen = null;   // [front, top]
 function buildKitchenUI() {
